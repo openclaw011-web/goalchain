@@ -122,43 +122,66 @@ Response: {
 
 ## On-Chain CPI to validate_stat
 
-TxLINE's Solana program exposes a `validate_stat` instruction that verifies Merkle proofs on-chain. Our Anchor program calls this via CPI.
+TxLINE's Solana program exposes a `validate_stat` instruction that verifies Merkle proofs on-chain. Our Anchor program calls this via CPI in `settle_market`.
 
 ### TxLINE Program IDs
 - **Mainnet**: `9ExbZjAapQww1vfcisDmrngPinHTEfpjYRWMunJgcKaA`
 - **Devnet**: `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`
 
-### CPI Call Pattern (Rust)
+### Real validate_stat signature (from the on-chain IDL)
+
+`anchor idl fetch 6pW64...yP2J` → `scripts/idl/txoracle.json`:
+
+```
+validate_stat(
+  ts: i64,
+  fixture_summary: ScoresBatchSummary,
+  fixture_proof: Vec<ProofNode>,
+  main_tree_proof: Vec<ProofNode>,
+  predicate: TraderPredicate,
+  stat_a: StatTerm,
+  stat_b: Option<StatTerm>,
+  op: Option<BinaryExpression>,
+)
+Accounts: [daily_scores_merkle_roots (readonly)]
+Discriminator: [107,197,232,90,191,136,105,185]
+              = sha256("global:validate_stat")[..8]  (standard Anchor)
+```
+
+### CPI Call Pattern (actual code — settle_market)
+
+`settle_market(winning_outcome: u8, proof_data: Vec<u8>)` treats the proof
+payload as **opaque bytes**, assembled off-chain by the keeper and appended
+verbatim after the discriminator. Proof serialization therefore lives
+entirely off-chain — a change in TxLINE's payload never requires a program
+redeploy.
+
 ```rust
-// In settle_market instruction:
-use anchor_lang::solana_program::program::invoke;
-use anchor_lang::solana_program::instruction::{AccountMeta, Instruction};
+// Discriminator: standard Anchor derivation, matches the deployed IDL.
+let discriminator = anchor_lang::solana_program::hash::hash(b"global:validate_stat")
+    .to_bytes()[..8]
+    .to_vec();
 
-// Build the validate_stat instruction for TxLINE program
-let accounts = vec![
-    AccountMeta::new_readonly(ctx.accounts.txline_fixture_account.key(), false),
-    AccountMeta::new_readonly(ctx.accounts.stat_proof_account.key(), false),
-];
+// Instruction data: discriminator || proof_data (keeper-built borsh args)
+let mut instruction_data = discriminator;
+instruction_data.extend_from_slice(&proof_data);
 
-// Discriminator for validate_stat instruction
-let mut data = vec![0xce, 0x3a, 0x1b, 0x5f, 0x82, 0x4d, 0x9e, 0x07];
-data.extend_from_slice(&proof_data);
-
-let ix = Instruction {
-    program_id: ctx.accounts.txline_program.key(),
-    accounts,
-    data,
+let cpi_ix = Instruction {
+    program_id: ctx.accounts.txline_program.key(),   // enforced == TXLINE_DEVNET
+    accounts: vec![
+        AccountMeta::new_readonly(ctx.accounts.txline_state.key(), false),
+        AccountMeta::new(ctx.accounts.txline_proof_account.key(), false),
+    ],
+    data: instruction_data,
 };
 
-invoke(
-    &ix,
-    &[
-        ctx.accounts.txline_fixture_account.to_account_info(),
-        ctx.accounts.stat_proof_account.to_account_info(),
-        ctx.accounts.txline_program.to_account_info(),
-    ],
-)?;
+invoke(&cpi_ix, &[...])?;   // failure reverts settle_market — market stays Locked
 ```
+
+`txline_state` is TxLINE's `daily_scores_merkle_roots` account; the second
+meta lands in TxLINE's `remaining_accounts` and is ignored by it. The keeper
+(`backend/src/services/solana.service.ts` `settleMarket`) borsh-serializes
+the `validate_stat` args listed above into `proof_data`.
 
 ---
 

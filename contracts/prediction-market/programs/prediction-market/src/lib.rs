@@ -43,6 +43,11 @@ pub const TXLINE_DEVNET: Pubkey =
 /// Maximum protocol fee: 10% (1000 basis points)
 pub const MAX_FEE_BPS: u16 = 1000;
 
+/// Maximum size of the TxLINE proof payload forwarded by [`settle_market`].
+/// Bounded by the Solana transaction size in practice; this cap only guards
+/// against pathological input.
+pub const MAX_PROOF_DATA_LEN: usize = 1024;
+
 #[program]
 pub mod prediction_market {
     use super::*;
@@ -298,20 +303,23 @@ pub mod prediction_market {
     /// TxLINE program (`6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`
     /// on Devnet) calling the `validate_stat` instruction.
     ///
-    /// **TxLINE account expectations** (based on standard Anchor oracle
-    /// patterns — adjust if the deployed TxLINE IDL differs):
-    ///
-    /// | # | Account             | R/W | Description                      |
-    /// |---|---------------------|-----|----------------------------------|
-    /// | 0 | `txline_state`      | R   | TxLINE program state account     |
-    /// | 1 | `txline_proof`      | W   | Merkle proof to consume          |
-    ///
     /// **Instruction data layout:**
     /// ```ignore
-    /// [0..8)    — Anchor discriminator (sha256("global:validate_stat"))
-    /// [8..40)   — match_id (32 bytes, hash of the match identifier)
-    /// [40]      — winning_outcome (1 byte)
+    /// [0..8)  — Anchor discriminator (sha256("global:validate_stat")[..8])
+    /// [8..)   — proof_data: the borsh-serialized validate_stat arguments,
+    ///           built off-chain by the keeper and forwarded verbatim.
+    ///           For the real txoracle program that is
+    ///           (ts, fixture_summary, fixture_proof, main_tree_proof,
+    ///            predicate, stat_a, stat_b, op) — see scripts/idl/txoracle.json.
     /// ```
+    ///
+    /// The program treats `proof_data` as opaque: the *oracle* is the
+    /// authority on proof validity. Our program only asserts that the
+    /// CPI target is the genuine TxLINE program and that the CPI
+    /// succeeds. `txline_state` is TxLINE's `daily_scores_merkle_roots`
+    /// account (the Merkle-root anchor the proof is checked against);
+    /// any further accounts land in TxLINE's `remaining_accounts` and
+    /// are ignored by it.
     ///
     /// If the CPI succeeds the market transitions to **Settled** and
     /// `winning_outcome` is recorded.  If it fails (invalid proof),
@@ -328,11 +336,12 @@ pub mod prediction_market {
     /// | `clock`           | R | No      |
     ///
     /// * `winning_outcome` — index into the market's outcomes array
-    /// * `match_id_bytes` — 32-byte hash of the match ID (for TxLINE)
+    /// * `proof_data` — borsh-serialized `validate_stat` arguments
+    ///   (appended verbatim after the discriminator)
     pub fn settle_market(
         ctx: Context<SettleMarket>,
         winning_outcome: u8,
-        match_id_bytes: [u8; 32],
+        proof_data: Vec<u8>,
     ) -> Result<()> {
         let market = &mut ctx.accounts.market;
 
@@ -344,6 +353,10 @@ pub mod prediction_market {
         require!(
             (winning_outcome as usize) < market.outcomes.len(),
             PredictionMarketError::InvalidOutcome
+        );
+        require!(
+            !proof_data.is_empty() && proof_data.len() <= MAX_PROOF_DATA_LEN,
+            PredictionMarketError::InvalidProofData
         );
 
         // ── Time validation ─────────────────────────────────────
@@ -363,12 +376,13 @@ pub mod prediction_market {
         //   TXLINE CPI — validate_stat
         // =========================================================
         //
-        // Build and invoke the TxLINE validate_stat instruction.
-        //
-        // The instruction discriminator is the first 8 bytes of
+        // The discriminator is the first 8 bytes of
         // SHA-256("global:validate_stat") — the standard Anchor
-        // instruction discriminator derivation.  Replace with the
-        // actual discriminator if TxLINE uses a different convention.
+        // derivation, matching the deployed txoracle IDL
+        // ([107,197,232,90,191,136,105,185]).  The proof payload is
+        // forwarded verbatim: proof serialization lives off-chain in
+        // the keeper, so oracle payload changes never require a
+        // program redeploy.
         // =========================================================
 
         // 8-byte Anchor instruction discriminator
@@ -376,10 +390,9 @@ pub mod prediction_market {
             .to_bytes()[..8]
             .to_vec();
 
-        // Instruction data: discriminator || match_id_hash || outcome
+        // Instruction data: discriminator || proof_data
         let mut instruction_data = discriminator;
-        instruction_data.extend_from_slice(&match_id_bytes);
-        instruction_data.push(winning_outcome);
+        instruction_data.extend_from_slice(&proof_data);
 
         // Account metas expected by TxLINE
         let cpi_account_metas = vec![
@@ -761,7 +774,7 @@ pub struct LockMarket<'info> {
 // ── SettleMarket ───────────────────────────────────────────────────
 
 #[derive(Accounts)]
-#[instruction(winning_outcome: u8, match_id_bytes: [u8; 32])]
+#[instruction(winning_outcome: u8, proof_data: Vec<u8>)]
 pub struct SettleMarket<'info> {
     /// Market to settle — transitions from Locked → Settled.
     #[account(
@@ -791,7 +804,9 @@ pub struct SettleMarket<'info> {
     #[account(executable)]
     pub txline_program: AccountInfo<'info>,
 
-    /// TxLINE program state account (read-only).
+    /// TxLINE program state account (read-only) — for the real txoracle
+    /// this is the `daily_scores_merkle_roots` PDA the proof is verified
+    /// against.
     /// CHECK: passed as-is to the `validate_stat` CPI; the TxLINE program
     /// validates it during the CPI.
     pub txline_state: AccountInfo<'info>,

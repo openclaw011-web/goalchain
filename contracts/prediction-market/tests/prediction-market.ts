@@ -581,6 +581,9 @@ describe("prediction-market", () => {
       // the market MUST remain Locked — that is the trustless guarantee.
       const matchIdHash = Buffer.alloc(32, 0); // placeholder hash
       const WINNING_OUTCOME = 0;
+      // proof_data is forwarded verbatim after the validate_stat
+      // discriminator; the mock deserializes match_id ++ outcome from it.
+      const proofData = Buffer.concat([matchIdHash, Buffer.from([WINNING_OUTCOME])]);
 
       const fakeTxlineState = PublicKey.findProgramAddressSync(
         [Buffer.from("state")],
@@ -590,7 +593,7 @@ describe("prediction-market", () => {
 
       try {
         await program.methods
-          .settleMarket(WINNING_OUTCOME, [...matchIdHash])
+          .settleMarket(WINNING_OUTCOME, proofData)
           .accounts({
             market: settleMarketPda,
             config: configPda,
@@ -611,6 +614,33 @@ describe("prediction-market", () => {
       const mkt = await program.account.market.fetch(settleMarketPda);
       expect(mkt.status).to.deep.equal({ locked: {} });
       expect(mkt.winningOutcome).to.equal(255); // still OUTCOME_NOT_SET
+    });
+
+    it("rejects settlement with empty proof_data", async () => {
+      try {
+        await program.methods
+          .settleMarket(0, Buffer.alloc(0))
+          .accounts({
+            market: settleMarketPda,
+            config: configPda,
+            admin: wallet.publicKey,
+            // The proof_data check runs before the TxLINE program-id
+            // validation, so an executable stand-in suffices.
+            txlineProgram: SystemProgram.programId,
+            txlineState: PublicKey.findProgramAddressSync(
+              [Buffer.from("state")],
+              TXLINE_PROGRAM_ID
+            )[0],
+            txlineProofAccount: Keypair.generate().publicKey,
+          })
+          .rpc();
+        assert.fail("Should have thrown");
+      } catch (err: any) {
+        expect(err.message).to.include("InvalidProofData");
+      }
+
+      const mkt = await program.account.market.fetch(settleMarketPda);
+      expect(mkt.status).to.deep.equal({ locked: {} });
     });
 
     it("rejects settle on unsettlable market (still Open)", async () => {
@@ -634,7 +664,7 @@ describe("prediction-market", () => {
 
       try {
         await program.methods
-          .settleMarket(0, [...Buffer.alloc(32, 0)])
+          .settleMarket(0, Buffer.concat([Buffer.alloc(32, 0), Buffer.from([0])]))
           .accounts({
             market: pda,
             config: configPda,
@@ -677,7 +707,7 @@ describe("prediction-market", () => {
 
       try {
         await program.methods
-          .settleMarket(5, [...Buffer.alloc(32, 0)])
+          .settleMarket(5, Buffer.concat([Buffer.alloc(32, 0), Buffer.from([5])]))
           .accounts({
             market: pda,
             config: configPda,
@@ -1005,8 +1035,13 @@ describe("prediction-market", () => {
       await sleep(10_000); // let resolve_time pass
 
       const WINNING_OUTCOME = 0; // "Green" — users[0] wins
+      // proof_data = match_id (32 bytes) ++ outcome (1 byte) — exactly what
+      // the mock's validate_stat(match_id: [u8;32], outcome: u8) expects.
       await program.methods
-        .settleMarket(WINNING_OUTCOME, [...Buffer.alloc(32, 7)])
+        .settleMarket(
+          WINNING_OUTCOME,
+          Buffer.concat([Buffer.alloc(32, 7), Buffer.from([WINNING_OUTCOME])])
+        )
         .accounts({
           market: lifePda,
           config: configPda,

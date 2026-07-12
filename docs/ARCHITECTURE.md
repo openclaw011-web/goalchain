@@ -100,21 +100,28 @@ Validation:
 #### settle_market  
 ```
 Accounts:
-  - settler (signer — keeper bot or anyone)
-  - market (mut)
-  - txline_fixture_account (TxLINE program account)
-  - stat_proof (TxLINE program account)
-  - txline_program (TxLINE program ID: 6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J)
+  - market (mut, PDA)
+  - config (PDA — caller must be the configured admin)
+  - admin (signer — the keeper bot)
+  - txline_program (must equal 6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J)
+  - txline_state (TxLINE daily_scores_merkle_roots account)
+  - txline_proof_account (mut, forwarded to the CPI)
+  - clock
 
 Args:
-  - proof_data: Vec<u8>  (Merkle proof bytes from TxLINE API)
+  - winning_outcome: u8   (index into market.outcomes)
+  - proof_data: Vec<u8>   (borsh-serialized validate_stat args, built
+                           off-chain by the keeper — appended verbatim
+                           after the validate_stat discriminator, so
+                           oracle payload changes never need a redeploy)
 
 Logic:
-  1. market.status == Locked
-  2. CPI into txline_program.validate_stat(proof_data)
-  3. Parse returned outcome from txline accounts
-  4. Set market.winning_outcome
-  5. market.status = Settled
+  1. market.status == Locked; winning_outcome in range; proof_data non-empty
+  2. Clock::get().unix_timestamp >= market.resolve_time
+  3. txline_program key == TXLINE_DEVNET
+  4. CPI into txline_program.validate_stat(proof_data)
+     — CPI failure reverts everything: market stays Locked
+  5. Set market.winning_outcome; market.status = Settled
   6. Emit MarketSettled event
 ```
 

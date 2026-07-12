@@ -81,6 +81,9 @@ pub enum PredictionMarketError {
     #[msg("TxLINE validate_stat CPI call failed — proof rejected")]
     TxLineCpiFailed,
 
+    #[msg("Proof data is empty or exceeds the maximum allowed size")]
+    InvalidProofData,
+
     #[msg("Invalid TxLINE program ID provided")]
     InvalidTxLineProgram,
 

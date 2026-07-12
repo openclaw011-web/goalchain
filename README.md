@@ -85,14 +85,15 @@ await createMarket({ matchId, homeOdds: odds.home, awayOdds: odds.away, drawOdds
 
 ### 3. On-Chain Proof Verification (The Crown Jewel)
 ```rust
-// In our Anchor program - settle_market instruction
-// CPI into TxLINE's validate_stat to verify match outcome
-let cpi_accounts = ValidateStat {
-    fixture_account: ctx.accounts.txline_fixture.to_account_info(),
-    stat_proof: ctx.accounts.stat_proof.to_account_info(),
-};
-txline_sdk::cpi::validate_stat(cpi_ctx, proof_data)?;
-// If this succeeds, the outcome is cryptographically confirmed ✓
+// settle_market(winning_outcome: u8, proof_data: Vec<u8>)
+// proof_data = borsh-serialized validate_stat args, built off-chain by the
+// keeper and forwarded verbatim after the Anchor discriminator — so a
+// TxLINE payload change never requires redeploying our program.
+let mut instruction_data =
+    hash(b"global:validate_stat").to_bytes()[..8].to_vec();
+instruction_data.extend_from_slice(&proof_data);
+invoke(&Instruction { program_id: TXLINE_DEVNET, accounts, data: instruction_data }, ..)?;
+// CPI failure reverts settle_market — no valid proof, no settlement ✓
 ```
 
 ---

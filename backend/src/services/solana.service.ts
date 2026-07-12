@@ -270,13 +270,20 @@ export class SolanaService {
         txlineProgram,
       );
 
-      // 32-byte match-id hash for the TxLINE validate_stat CPI,
-      // taken from the Merkle root of the proof bundle.
+      // settle_market forwards proof_data verbatim after the validate_stat
+      // discriminator, so the payload is assembled entirely off-chain here.
+      // Current encoding: match-id hash (32 bytes, from the proof bundle's
+      // Merkle root) ++ outcome (1 byte). To settle against the real
+      // txoracle, borsh-serialize its validate_stat args instead
+      // (ts, fixture_summary, fixture_proof, main_tree_proof, predicate,
+      // stat_a, stat_b, op — see scripts/idl/txoracle.json); no program
+      // change is needed.
       const matchIdBytes = Buffer.alloc(32);
       Buffer.from(merkleProof.root.replace(/^0x/, ''), 'hex').copy(matchIdBytes);
+      const proofData = Buffer.concat([matchIdBytes, Buffer.from([outcome])]);
 
       const signature = await (this.program.methods as Record<string, any>)
-        .settleMarket(outcome, Array.from(matchIdBytes))
+        .settleMarket(outcome, proofData)
         .accountsPartial({
           market: new web3.PublicKey(marketAddress),
           config: configPda,

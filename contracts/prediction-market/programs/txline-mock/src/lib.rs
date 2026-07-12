@@ -3,11 +3,15 @@
 //! The real TxLINE program only exists on Devnet, which makes the
 //! settlement CPI (and everything after it: claims, payouts) untestable
 //! on a local validator. This mock exposes a `validate_stat` instruction
-//! with the exact same Anchor discriminator, argument layout and account
-//! order that `prediction-market::settle_market` invokes:
+//! with the exact same Anchor discriminator and account order that
+//! `prediction-market::settle_market` invokes.
+//!
+//! `settle_market` forwards its `proof_data` bytes verbatim after the
+//! discriminator; the tests encode `match_id ([u8;32]) ++ outcome (u8)`
+//! (33 bytes), which borsh-deserializes into this mock's arguments:
 //!
 //! ```text
-//! data:     sha256("global:validate_stat")[..8] ++ match_id ([u8;32]) ++ outcome (u8)
+//! data:     sha256("global:validate_stat")[..8] ++ proof_data
 //! accounts: [state (readonly), stat_proof (writable)]
 //! ```
 //!
