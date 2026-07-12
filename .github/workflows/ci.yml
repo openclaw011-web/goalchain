@@ -73,11 +73,15 @@ jobs:
         working-directory: contracts/prediction-market
         run: cargo check --manifest-path programs/prediction-market/Cargo.toml
 
+  # Deploy jobs are skipped until the ENABLE_DEPLOY repository variable is
+  # set to 'true' (Settings → Secrets and variables → Actions → Variables)
+  # alongside the Railway/Vercel secrets — otherwise they would fail red on
+  # every push.
   deploy-backend:
     name: Deploy Backend (Railway)
     needs: [backend-tests]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && vars.ENABLE_DEPLOY == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: bervProject/railway-deploy@main
@@ -89,7 +93,7 @@ jobs:
     name: Deploy Frontend (Vercel)
     needs: [frontend-build]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && vars.ENABLE_DEPLOY == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: amondnet/vercel-action@v25
