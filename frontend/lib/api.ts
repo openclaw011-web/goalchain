@@ -19,11 +19,91 @@ class ApiClient {
         signal: AbortSignal.timeout(5000),
       });
       if (!res.ok) throw new Error(`API error: ${res.status}`);
-      return res.json();
+      const json = await res.json();
+
+      // The backend wraps responses in { success, data, ... } — unwrap it.
+      const payload =
+        json && typeof json === 'object' && 'success' in json && 'data' in json
+          ? (json as { data: unknown }).data
+          : json;
+
+      // Adapt backend market rows (fixtureId/homeTeam/odds-map shape) to the
+      // frontend Market type; fall back to demo data when the backend has no
+      // markets yet (e.g. TxLINE credentials not configured).
+      if (endpoint.startsWith('/markets')) {
+        if (Array.isArray(payload)) {
+          if (payload.length === 0) return this.getMockFallback<T>(endpoint, 'GET');
+          return payload.map((m) => this.adaptBackendMarket(m)) as unknown as T;
+        }
+        if (payload && typeof payload === 'object' && 'fixtureId' in (payload as object)) {
+          return this.adaptBackendMarket(payload) as unknown as T;
+        }
+      }
+
+      return payload as T;
     } catch (e) {
       // Fallback to mock data
       return this.getMockFallback<T>(endpoint, options?.method || 'GET');
     }
+  }
+
+  /** Map a backend PredictionMarket row to the frontend Market shape. */
+  private adaptBackendMarket(m: any): Market {
+    const odds = {
+      home: Number(m.odds?.home_win) || 2.0,
+      draw: Number(m.odds?.draw) || 3.2,
+      away: Number(m.odds?.away_win) || 3.0,
+    };
+    const pools = {
+      home: Number(m.poolSizes?.home_win) || 0,
+      draw: Number(m.poolSizes?.draw) || 0,
+      away: Number(m.poolSizes?.away_win) || 0,
+    };
+    const poolSize = pools.home + pools.draw + pools.away;
+    const status: Market['status'] =
+      m.status === 'open' ? 'upcoming' : m.status === 'locked' ? 'live' : 'settled';
+
+    const team = (name: string, id: string) => ({
+      id,
+      name,
+      shortName: name.slice(0, 3).toUpperCase(),
+      flag: '⚽',
+      group: '',
+      ranking: 0,
+    });
+
+    return {
+      id: m.id,
+      matchId: m.fixtureId,
+      type: 'match_winner',
+      title: `${m.homeTeam} vs ${m.awayTeam} - Match Winner`,
+      status,
+      lockTime: m.kickoffTime,
+      resolveTime: m.settledAt ?? null,
+      poolSize,
+      volume: poolSize,
+      onchainMarketId: m.onchainMarketId ?? undefined,
+      outcomes: [
+        { id: `${m.id}-home`, label: m.homeTeam, odds: odds.home, probability: 1 / odds.home, volume: pools.home },
+        { id: `${m.id}-draw`, label: 'Draw', odds: odds.draw, probability: 1 / odds.draw, volume: pools.draw },
+        { id: `${m.id}-away`, label: m.awayTeam, odds: odds.away, probability: 1 / odds.away, volume: pools.away },
+      ],
+      oddsHistory: [],
+      match: {
+        id: m.fixtureId,
+        homeTeam: team(m.homeTeam, `${m.id}-h`),
+        awayTeam: team(m.awayTeam, `${m.id}-a`),
+        date: m.kickoffTime,
+        stage: 'World Cup 2026',
+        status: status === 'upcoming' ? 'scheduled' : status === 'live' ? 'live' : 'finished',
+        homeScore: null,
+        awayScore: null,
+        minute: null,
+        events: [],
+        venue: '',
+        group: null,
+      },
+    };
   }
 
   private getMockFallback<T>(_endpoint: string, _method: string): T {

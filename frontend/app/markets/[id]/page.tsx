@@ -1,6 +1,5 @@
 'use client';
 
-import { use } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
@@ -17,9 +16,9 @@ import { apiClient } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { useWallet } from '@solana/wallet-adapter-react';
 
-export default function MarketDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const marketId = resolvedParams.id;
+export default function MarketDetailPage({ params }: { params: { id: string } }) {
+  // Next 14: `params` is a plain object (the Promise/use() form is Next 15+).
+  const marketId = params.id;
   const { connected } = useWallet();
 
   const { data: market, isLoading } = useQuery({

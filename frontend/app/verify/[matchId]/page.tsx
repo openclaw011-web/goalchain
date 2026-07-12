@@ -1,6 +1,5 @@
 'use client';
 
-import { use } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
@@ -11,9 +10,9 @@ import { merkleProofs, getMatchById, getMarketByMatchId } from '@/lib/mock-data'
 import { apiClient } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 
-export default function VerifyPage({ params }: { params: Promise<{ matchId: string }> }) {
-  const resolvedParams = use(params);
-  const matchId = resolvedParams.matchId.toLowerCase();
+export default function VerifyPage({ params }: { params: { matchId: string } }) {
+  // Next 14: `params` is a plain object (the Promise/use() form is Next 15+).
+  const matchId = params.matchId.toLowerCase();
 
   const match = getMatchById(matchId);
   const market = getMarketByMatchId(matchId);
