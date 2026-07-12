@@ -111,7 +111,7 @@ vercel deploy --prod
 - [x] Program upgrade deployed (claim/refund payout fix + settle_market proof pass-through) — tx `4HxXjqybbuaonvacMv156XMCW2B7DbNMi6KUNmRQd5XqM2AC3STaAM7oqmtDELz7Cnmq48TtDsxyQ7D3z99tBDqs`
 - [x] PDA payout verified on the deployed binary (`scripts/verify-payout-devnet.mjs` — refund_bet moved 0.01 SOL out of escrow)
 - [x] GitHub repo is public: https://github.com/openclaw011-web/goalchain
-- [ ] Live site URL responds with 200 (Vercel + Railway deploys — needs your accounts)
+- [x] Live site URL responds with 200: **https://goalchain-opal.vercel.app** (all 5 routes verified in production; Railway backend pending — frontend serves demo data until then)
 - [ ] Wallet connect works on deployed site
 - [ ] TxLINE scores visible in deployed frontend (paste TXLINE_JWT/TXLINE_API_TOKEN from backend/.env.txline into the host's dashboard)
 - [ ] Demo video is unlisted on YouTube with good audio

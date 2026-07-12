@@ -1,0 +1,5 @@
+# Vercel project link (contains project/org ids)
+.vercel
+# local env (but keep .env.example tracked)
+.env.local
+.env*.local

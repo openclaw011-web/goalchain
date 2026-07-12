@@ -2,6 +2,8 @@
 
 > **TxODDS x Superteam Earn Hackathon Submission**
 > Track: Prediction Markets and Settlement | Prize Pool: $18,000 USDT
+>
+> **🌐 Live: https://goalchain-opal.vercel.app** · **Repo: https://github.com/openclaw011-web/goalchain**
 
 [![Solana](https://img.shields.io/badge/Solana-Devnet-9945FF?logo=solana)](https://devnet.solana.com)
 [![TxLINE](https://img.shields.io/badge/Powered_by-TxLINE-00ff88)](https://txline.txodds.com)
