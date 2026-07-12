@@ -31,7 +31,7 @@ npm run lint       # next lint
 ```bash
 anchor build       # also generates target/idl + target/types (idl-build feature)
 anchor test --skip-build --provider.cluster localnet   # 25 mocha tests on a local validator
-anchor deploy --provider.cluster devnet                # needs ~2.1 SOL for buffer rent
+anchor deploy --program-name prediction_market --provider.cluster devnet                # needs ~2.1 SOL for buffer rent
 cargo check --manifest-path programs/prediction-market/Cargo.toml   # what CI runs
 ```
 Anchor.toml's default cluster is devnet — plain `anchor test` will try to **deploy to devnet**; always pass `--provider.cluster localnet` for tests.
@@ -53,7 +53,7 @@ Three layers connected by the Solana program ID and the TxLINE oracle:
 
 1. **Anchor program** (`contracts/prediction-market/programs/prediction-market/src/`) — `lib.rs` holds all instructions; `state.rs` accounts/enums; `errors.rs` error codes.
    - Market lifecycle: **Open → Locked → Settled** (or **Cancelled** → `refund_bet`).
-   - PDAs: `MarketConfig ["config"]`, `Market ["market", market_id]`, `Bet ["bet", market, bettor]`.
+   - PDAs: `MarketConfig ["config"]`, `Market ["market", u64-LE(market_id)]`, `Bet ["bet", market, bettor, [outcome_index]]`.
    - **Escrow model:** the Market PDA itself holds all escrowed SOL in its lamport balance — there is no separate vault account. Payouts debit the PDA via signer seeds.
    - `settle_market` CPIs into the TxLINE devnet program (`6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`) `validate_stat` instruction with Merkle proof bytes; if the proof fails, the market stays Locked. This CPI is the core of the trustless design.
 

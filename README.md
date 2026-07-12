@@ -138,7 +138,7 @@ cp frontend/.env.example frontend/.env.local
 ```bash
 cd contracts/prediction-market
 anchor build
-anchor deploy --provider.cluster devnet
+anchor deploy --program-name prediction_market --provider.cluster devnet
 ```
 
 > Already deployed at [`C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5`](https://explorer.solana.com/address/C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5?cluster=devnet) — skip this step unless you fork the program.

@@ -19,7 +19,7 @@
 ### 3. Application Access ✅
 - [ ] Deploy frontend to Vercel: `npx vercel --prod`
 - [ ] Deploy backend to Railway or Render
-- [ ] Contract deployed to Devnet: `anchor deploy --provider.cluster devnet`
+- [ ] Contract deployed to Devnet: `anchor deploy --program-name prediction_market --provider.cluster devnet`
 - [ ] Working URL to share with judges
 
 ### 4. Brief Technical Documentation ✅
@@ -74,7 +74,7 @@ Copy into submission form:
 ```bash
 cd contracts/prediction-market
 anchor build
-anchor deploy --provider.cluster devnet
+anchor deploy --program-name prediction_market --provider.cluster devnet
 # Copy program ID from output → update frontend/lib/solana.ts and backend/.env
 ```
 
@@ -101,12 +101,12 @@ vercel deploy --prod
 ## Pre-Submission Final Check
 
 - [x] `npm run build` passes in frontend with 0 errors
-- [x] Backend tests pass: `cd backend && npm test` (79/79)
+- [x] Backend tests pass: `cd backend && npm test` (88/88 incl. keeper bot)
 - [x] Contract compiles: `anchor build` (+ IDL generated)
 - [x] Contract test suite passes: `anchor test --skip-build --provider.cluster localnet` (25/25)
 - [x] Config + 6 demo markets live on Devnet (`scripts/bootstrap-devnet-markets.mjs`)
 - [x] Real on-chain bet verified end-to-end (`scripts/smoke-test-bet.mjs` — 0.01 SOL into escrow)
-- [ ] Program upgrade with claim/refund fix deployed (needs ~2.1 SOL Devnet for buffer rent; run `anchor deploy --provider.cluster devnet` once the faucet allows)
+- [ ] Program upgrade with claim/refund fix deployed (needs ~2.1 SOL Devnet for buffer rent; run `anchor deploy --program-name prediction_market --provider.cluster devnet` once the faucet allows)
 - [ ] Live site URL responds with 200
 - [ ] Wallet connect works on deployed site
 - [ ] TxLINE scores visible in deployed frontend (needs real TXLINE_JWT/TXLINE_API_TOKEN)
