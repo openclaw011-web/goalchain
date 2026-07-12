@@ -1,0 +1,1444 @@
+{
+  "address": "C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5",
+  "metadata": {
+    "name": "prediction_market",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Solana Anchor prediction market with TxLINE oracle CPI settlement — World Cup Hackathon"
+  },
+  "instructions": [
+    {
+      "name": "cancel_market",
+      "docs": [
+        "Cancel a market (e.g., match abandoned).  Only possible if the",
+        "market has **not** been settled.  Bettors can then call",
+        "[`refund_bet`] to get their stake back."
+      ],
+      "discriminator": [
+        205,
+        121,
+        84,
+        210,
+        222,
+        71,
+        150,
+        11
+      ],
+      "accounts": [
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.market_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_winnings",
+      "docs": [
+        "Claim proportional winnings from a settled market.",
+        "",
+        "## Payout formula",
+        "",
+        "```text",
+        "payout = (bet_amount × total_pool) / winning_outcome_pool",
+        "```",
+        "",
+        "This is a **proportional** distribution: winners split the",
+        "entire pool in proportion to their contribution to the winning",
+        "outcome's sub-pool.",
+        "",
+        "The protocol fee (`fee_bps` %) is effectively retained in the",
+        "market account (the payout is still proportional to the full",
+        "`total_pool`, so the fee dilutes everyone equally).",
+        "",
+        "| Account     | R/W | Signer? |",
+        "|-------------|-----|---------|",
+        "| `market`    | W   | No      |",
+        "| `bet`       | W   | No      |",
+        "| `winner`    | W   | Yes     |",
+        "| `system_program` | - | No |"
+      ],
+      "discriminator": [
+        161,
+        215,
+        24,
+        59,
+        14,
+        236,
+        242,
+        221
+      ],
+      "accounts": [
+        {
+          "name": "market",
+          "docs": [
+            "Settled market — payout source (via lamport balance)."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.market_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bet",
+          "docs": [
+            "The winning bet to claim."
+          ],
+          "writable": true
+        },
+        {
+          "name": "winner",
+          "docs": [
+            "Winner — must be the original `bet.bettor`."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_market",
+      "docs": [
+        "Create a new prediction market. Only callable by the admin.",
+        "",
+        "| Account     | R/W | Signer? |",
+        "|-------------|-----|---------|",
+        "| `market`    | W   | No      | (PDA)",
+        "| `config`    | R   | No      |",
+        "| `admin`     | W   | Yes     |",
+        "| `system_program` | - | No |",
+        "| `clock`     | R   | No      |",
+        "",
+        "* `market_id` — unique numeric ID",
+        "* `match_id` — string like `\"FIFA-WC-2026-MATCH-001\"`",
+        "* `market_type` — [`MarketType`] variant",
+        "* `outcomes` — 2–3 human-readable outcome names (≤32 chars each)",
+        "* `lock_time` — unix ts after which betting closes",
+        "* `resolve_time` — unix ts after which settlement is allowed"
+      ],
+      "discriminator": [
+        103,
+        226,
+        97,
+        235,
+        200,
+        188,
+        251,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "market",
+          "docs": [
+            "Market PDA — created here.  Holds all escrowed SOL."
+          ],
+          "writable": true
+        },
+        {
+          "name": "config",
+          "docs": [
+            "Config singleton — ensures caller is the admin."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "docs": [
+            "Admin signer (pays rent for market)."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        },
+        {
+          "name": "match_id",
+          "type": "string"
+        },
+        {
+          "name": "market_type",
+          "type": {
+            "defined": {
+              "name": "MarketType"
+            }
+          }
+        },
+        {
+          "name": "outcomes",
+          "type": {
+            "vec": "string"
+          }
+        },
+        {
+          "name": "lock_time",
+          "type": "i64"
+        },
+        {
+          "name": "resolve_time",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_config",
+      "docs": [
+        "Deploy the global [`MarketConfig`] singleton.",
+        "",
+        "| Account     | R/W | Signer? |",
+        "|-------------|-----|---------|",
+        "| `config`    | W   | No      |",
+        "| `admin`     | W   | Yes     |",
+        "| `system_program` | - | No |",
+        "",
+        "* `fee_bps` — protocol fee in basis points (max 1000 = 10 %)"
+      ],
+      "discriminator": [
+        208,
+        127,
+        21,
+        1,
+        194,
+        190,
+        196,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "docs": [
+            "Global config PDA — created once."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "docs": [
+            "Admin signer (pays rent for config)."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "fee_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "lock_market",
+      "docs": [
+        "Transition a market from **Open → Locked**.",
+        "No further bets are accepted after this point."
+      ],
+      "discriminator": [
+        107,
+        8,
+        184,
+        91,
+        223,
+        13,
+        180,
+        38
+      ],
+      "accounts": [
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.market_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "place_bet",
+      "docs": [
+        "Place a bet by transferring SOL into the market's PDA escrow.",
+        "The market must be **Open** and the current time must be before",
+        "`lock_time`.",
+        "",
+        "| Account     | R/W | Signer? |",
+        "|-------------|-----|---------|",
+        "| `market`    | W   | No      |",
+        "| `bet`       | W   | No      | (PDA)",
+        "| `bettor`    | W   | Yes     |",
+        "| `system_program` | - | No |",
+        "| `clock`     | R   | No      |",
+        "",
+        "* `amount` — lamports to wager",
+        "* `outcome_index` — index into the market's `outcomes` array"
+      ],
+      "discriminator": [
+        222,
+        62,
+        67,
+        220,
+        63,
+        166,
+        126,
+        33
+      ],
+      "accounts": [
+        {
+          "name": "market",
+          "docs": [
+            "Market — receives SOL and updates pools."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.market_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bet",
+          "docs": [
+            "Bet PDA — records this wager."
+          ],
+          "writable": true
+        },
+        {
+          "name": "bettor",
+          "docs": [
+            "Bettor — signs, pays rent, and sends SOL."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "outcome_index",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "refund_bet",
+      "docs": [
+        "Claim a full refund on a cancelled market.  Each bettor must",
+        "call this individually (pull-based refund model)."
+      ],
+      "discriminator": [
+        209,
+        182,
+        226,
+        96,
+        55,
+        121,
+        83,
+        183
+      ],
+      "accounts": [
+        {
+          "name": "market",
+          "docs": [
+            "Cancelled market — refund source."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.market_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bet",
+          "docs": [
+            "Bet to refund."
+          ],
+          "writable": true
+        },
+        {
+          "name": "bettor",
+          "docs": [
+            "Bettor receiving the refund — must be the original `bet.bettor`."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "settle_market",
+      "docs": [
+        "Settle a locked market by verifying the match result through",
+        "the **TxLINE** sports-data oracle.",
+        "",
+        "## TxLINE CPI Detail",
+        "",
+        "This instruction performs a Cross-Program Invocation into the",
+        "TxLINE program (`6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`",
+        "on Devnet) calling the `validate_stat` instruction.",
+        "",
+        "**TxLINE account expectations** (based on standard Anchor oracle",
+        "patterns — adjust if the deployed TxLINE IDL differs):",
+        "",
+        "| # | Account             | R/W | Description                      |",
+        "|---|---------------------|-----|----------------------------------|",
+        "| 0 | `txline_state`      | R   | TxLINE program state account     |",
+        "| 1 | `txline_proof`      | W   | Merkle proof to consume          |",
+        "",
+        "**Instruction data layout:**",
+        "```ignore",
+        "[0..8)    — Anchor discriminator (sha256(\"global:validate_stat\"))",
+        "[8..40)   — match_id (32 bytes, hash of the match identifier)",
+        "[40]      — winning_outcome (1 byte)",
+        "```",
+        "",
+        "If the CPI succeeds the market transitions to **Settled** and",
+        "`winning_outcome` is recorded.  If it fails (invalid proof),",
+        "the entire instruction reverts and the market stays Locked.",
+        "",
+        "| Account           | R/W | Signer? |",
+        "|-------------------|---|---------|",
+        "| `market`          | W | No      |",
+        "| `config`          | R | No      |",
+        "| `admin`           | - | Yes     |",
+        "| `txline_program`  | - | No      |",
+        "| `txline_state`    | R | No      |",
+        "| `txline_proof_account` | W | No |",
+        "| `clock`           | R | No      |",
+        "",
+        "* `winning_outcome` — index into the market's outcomes array",
+        "* `match_id_bytes` — 32-byte hash of the match ID (for TxLINE)"
+      ],
+      "discriminator": [
+        193,
+        153,
+        95,
+        216,
+        166,
+        6,
+        144,
+        217
+      ],
+      "accounts": [
+        {
+          "name": "market",
+          "docs": [
+            "Market to settle — transitions from Locked → Settled."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.market_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "docs": [
+            "Config singleton — ensures caller is admin."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "docs": [
+            "Admin signer."
+          ],
+          "signer": true
+        },
+        {
+          "name": "txline_program",
+          "docs": [
+            "The TxLINE program executable.",
+            "Devnet: `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`.",
+            "the instruction handler before the CPI is invoked."
+          ]
+        },
+        {
+          "name": "txline_state",
+          "docs": [
+            "TxLINE program state account (read-only).",
+            "validates it during the CPI."
+          ]
+        },
+        {
+          "name": "txline_proof_account",
+          "docs": [
+            "TxLINE Merkle proof account that will be consumed by the",
+            "`validate_stat` CPI.  Must contain a valid signed proof of",
+            "the match outcome."
+          ],
+          "writable": true
+        },
+        {
+          "name": "clock",
+          "docs": [
+            "Clock sysvar for resolve_time check."
+          ],
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "winning_outcome",
+          "type": "u8"
+        },
+        {
+          "name": "match_id_bytes",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Bet",
+      "discriminator": [
+        147,
+        23,
+        35,
+        59,
+        15,
+        75,
+        155,
+        32
+      ]
+    },
+    {
+      "name": "Market",
+      "discriminator": [
+        219,
+        190,
+        213,
+        55,
+        0,
+        227,
+        198,
+        154
+      ]
+    },
+    {
+      "name": "MarketConfig",
+      "discriminator": [
+        119,
+        255,
+        200,
+        88,
+        252,
+        82,
+        128,
+        24
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "BetPlacedEvent",
+      "discriminator": [
+        218,
+        76,
+        236,
+        147,
+        222,
+        135,
+        81,
+        43
+      ]
+    },
+    {
+      "name": "BetRefundedEvent",
+      "discriminator": [
+        247,
+        195,
+        184,
+        175,
+        225,
+        9,
+        181,
+        44
+      ]
+    },
+    {
+      "name": "ConfigInitializedEvent",
+      "discriminator": [
+        22,
+        167,
+        192,
+        50,
+        220,
+        20,
+        10,
+        71
+      ]
+    },
+    {
+      "name": "MarketCancelledEvent",
+      "discriminator": [
+        216,
+        244,
+        148,
+        122,
+        217,
+        220,
+        248,
+        188
+      ]
+    },
+    {
+      "name": "MarketCreatedEvent",
+      "discriminator": [
+        130,
+        142,
+        5,
+        16,
+        107,
+        160,
+        73,
+        124
+      ]
+    },
+    {
+      "name": "MarketLockedEvent",
+      "discriminator": [
+        81,
+        170,
+        30,
+        156,
+        0,
+        61,
+        94,
+        88
+      ]
+    },
+    {
+      "name": "MarketSettledEvent",
+      "discriminator": [
+        167,
+        87,
+        81,
+        204,
+        38,
+        20,
+        157,
+        250
+      ]
+    },
+    {
+      "name": "WinningsClaimedEvent",
+      "discriminator": [
+        30,
+        231,
+        120,
+        152,
+        158,
+        82,
+        26,
+        135
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MarketNotOpen",
+      "msg": "Market is not in Open status — cannot place bets"
+    },
+    {
+      "code": 6001,
+      "name": "MarketNotLocked",
+      "msg": "Market is not in Locked status — cannot settle"
+    },
+    {
+      "code": 6002,
+      "name": "MarketAlreadyLocked",
+      "msg": "Market is already locked"
+    },
+    {
+      "code": 6003,
+      "name": "MarketAlreadySettled",
+      "msg": "Market is already settled"
+    },
+    {
+      "code": 6004,
+      "name": "MarketAlreadyCancelled",
+      "msg": "Market is already cancelled"
+    },
+    {
+      "code": 6005,
+      "name": "MarketNotCancelled",
+      "msg": "Market is not cancelled — cannot refund"
+    },
+    {
+      "code": 6006,
+      "name": "CannotCancelSettledMarket",
+      "msg": "Cannot cancel a settled market"
+    },
+    {
+      "code": 6007,
+      "name": "BettingLocked",
+      "msg": "Betting window is closed — past lock_time"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidOutcome",
+      "msg": "Invalid outcome index — out of range"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidOutcomeCount",
+      "msg": "Invalid number of outcomes (must be 2 or 3)"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidOutcomeName",
+      "msg": "Outcome name cannot be empty"
+    },
+    {
+      "code": 6011,
+      "name": "OutcomeNameTooLong",
+      "msg": "Outcome name exceeds maximum length of 32 characters"
+    },
+    {
+      "code": 6012,
+      "name": "BetAlreadyClaimed",
+      "msg": "Bet has already been claimed or refunded"
+    },
+    {
+      "code": 6013,
+      "name": "NotWinningBet",
+      "msg": "This bet did not win — outcome does not match"
+    },
+    {
+      "code": 6014,
+      "name": "NotBetOwner",
+      "msg": "Only the original bettor can claim this bet"
+    },
+    {
+      "code": 6015,
+      "name": "InsufficientFunds",
+      "msg": "Insufficient funds for minimum bet amount"
+    },
+    {
+      "code": 6016,
+      "name": "NotResolvedYet",
+      "msg": "Market cannot be settled before resolve_time"
+    },
+    {
+      "code": 6017,
+      "name": "MarketNotSettled",
+      "msg": "Market is not settled yet — cannot claim"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidMatchId",
+      "msg": "Match ID exceeds maximum length or is empty"
+    },
+    {
+      "code": 6019,
+      "name": "InvalidLockTime",
+      "msg": "lock_time must be in the future"
+    },
+    {
+      "code": 6020,
+      "name": "InvalidResolveTime",
+      "msg": "resolve_time must be after lock_time"
+    },
+    {
+      "code": 6021,
+      "name": "MarketAlreadyExists",
+      "msg": "Market with this ID already exists (PDA collision)"
+    },
+    {
+      "code": 6022,
+      "name": "NotAdmin",
+      "msg": "Only the configured admin can perform this action"
+    },
+    {
+      "code": 6023,
+      "name": "TxLineCpiFailed",
+      "msg": "TxLINE validate_stat CPI call failed — proof rejected"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidTxLineProgram",
+      "msg": "Invalid TxLINE program ID provided"
+    },
+    {
+      "code": 6025,
+      "name": "Overflow",
+      "msg": "Arithmetic overflow or underflow"
+    },
+    {
+      "code": 6026,
+      "name": "InsufficientVaultBalance",
+      "msg": "Insufficient vault balance for payout"
+    },
+    {
+      "code": 6027,
+      "name": "InvalidFee",
+      "msg": "Fee exceeds maximum allowed (1000 bps = 10%)"
+    }
+  ],
+  "types": [
+    {
+      "name": "Bet",
+      "docs": [
+        "-----------------------------------------------------------------------",
+        "Bet - Records a single user's wager",
+        "",
+        "PDA seeds: [b\"bet\", market_key, bettor_key, [outcome_index]]",
+        "-----------------------------------------------------------------------"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "docs": [
+              "The market PDA this bet belongs to"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bettor",
+            "docs": [
+              "Wallet address of the bettor"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "outcome_index",
+            "docs": [
+              "Which outcome was chosen (index into market.outcomes)"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "amount",
+            "docs": [
+              "Amount of lamports wagered"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "claimed",
+            "docs": [
+              "Has this bet been claimed (winnings) or refunded (cancellation)?"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump seed"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BetPlacedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_id",
+            "type": "u64"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "bettor",
+            "type": "pubkey"
+          },
+          {
+            "name": "outcome_index",
+            "type": "u8"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BetRefundedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_id",
+            "type": "u64"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "bettor",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigInitializedEvent",
+      "docs": [
+        "====================================================================",
+        "Events — emitted for frontend / indexer tracking",
+        "===================================================================="
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Market",
+      "docs": [
+        "-----------------------------------------------------------------------",
+        "Market - A single prediction market",
+        "",
+        "PDA seeds: [b\"market\", market_id (8 LE bytes)]",
+        "",
+        "The market PDA also holds the escrowed SOL (via its lamport balance).",
+        "When users place bets, SOL is transferred to this account.",
+        "When winners claim, SOL is transferred from this account via PDA signer.",
+        "-----------------------------------------------------------------------"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_id",
+            "docs": [
+              "Unique numeric identifier for this market"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "match_id",
+            "docs": [
+              "Match identifier (e.g., \"FIFA-WC-2026-MATCH-001\")"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "market_type",
+            "docs": [
+              "Type of prediction market"
+            ],
+            "type": {
+              "defined": {
+                "name": "MarketType"
+              }
+            }
+          },
+          {
+            "name": "status",
+            "docs": [
+              "Current lifecycle status"
+            ],
+            "type": {
+              "defined": {
+                "name": "MarketStatus"
+              }
+            }
+          },
+          {
+            "name": "outcomes",
+            "docs": [
+              "Human-readable outcome names (e.g., [\"Brazil\", \"Draw\", \"Argentina\"])"
+            ],
+            "type": {
+              "vec": "string"
+            }
+          },
+          {
+            "name": "winning_outcome",
+            "docs": [
+              "Index of the winning outcome (OUTCOME_NOT_SET = 255 if unsettled)"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "total_pool",
+            "docs": [
+              "Total lamports deposited across all outcomes"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "outcome_pools",
+            "docs": [
+              "Pool lamports per outcome index (parallel to outcomes)"
+            ],
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "lock_time",
+            "docs": [
+              "Unix timestamp after which no new bets are accepted"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "resolve_time",
+            "docs": [
+              "Unix timestamp after which the market can be settled"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump seed for signing SOL transfers"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketCancelledEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_id",
+            "type": "u64"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketConfig",
+      "docs": [
+        "-----------------------------------------------------------------------",
+        "MarketConfig - Global program configuration",
+        "",
+        "PDA seeds: [b\"config\"]",
+        "Stores the admin authority and protocol fee.",
+        "-----------------------------------------------------------------------"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "docs": [
+              "Admin pubkey — can create/lock/settle/cancel markets"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_bps",
+            "docs": [
+              "Protocol fee in basis points (e.g., 250 = 2.50%)"
+            ],
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketCreatedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_id",
+            "type": "u64"
+          },
+          {
+            "name": "match_id",
+            "type": "string"
+          },
+          {
+            "name": "market_type",
+            "type": {
+              "defined": {
+                "name": "MarketType"
+              }
+            }
+          },
+          {
+            "name": "outcomes",
+            "type": {
+              "vec": "string"
+            }
+          },
+          {
+            "name": "lock_time",
+            "type": "i64"
+          },
+          {
+            "name": "resolve_time",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketLockedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_id",
+            "type": "u64"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketSettledEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_id",
+            "type": "u64"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "winning_outcome",
+            "type": "u8"
+          },
+          {
+            "name": "total_pool",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketStatus",
+      "docs": [
+        "-----------------------------------------------------------------------",
+        "MarketStatus - Lifecycle state of a market",
+        "-----------------------------------------------------------------------"
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Open"
+          },
+          {
+            "name": "Locked"
+          },
+          {
+            "name": "Settled"
+          },
+          {
+            "name": "Cancelled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketType",
+      "docs": [
+        "-----------------------------------------------------------------------",
+        "MarketType - The kind of prediction being made",
+        "-----------------------------------------------------------------------"
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "MatchWinner"
+          },
+          {
+            "name": "OverUnderGoals"
+          },
+          {
+            "name": "FirstScorer"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WinningsClaimedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_id",
+            "type": "u64"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "bettor",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}
