@@ -61,7 +61,7 @@ Copy `.env.local.example` to `.env.local` and set:
 | `NEXT_PUBLIC_API_URL` | `http://localhost:3001/api` | Backend API endpoint |
 | `NEXT_PUBLIC_WS_URL` | `ws://localhost:3001` | WebSocket URL for live updates |
 | `NEXT_PUBLIC_SOLANA_RPC` | `https://api.devnet.solana.com` | Solana RPC endpoint |
-| `NEXT_PUBLIC_PREDICTION_PROGRAM_ID` | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` | Prediction market program ID |
+| `NEXT_PUBLIC_PREDICTION_PROGRAM_ID` | `C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5` | Prediction market program ID |
 
 ## Mock Data
 

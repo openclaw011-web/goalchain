@@ -4,6 +4,8 @@ members = [
     "programs/*",
 ]
 
+[workspace.dependencies]
+
 [profile.release]
 overflow-checks = true
 opt-level = "z"

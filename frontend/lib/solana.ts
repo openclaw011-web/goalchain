@@ -2,7 +2,7 @@ import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } f
 import { WalletContextState } from '@solana/wallet-adapter-react';
 
 const SOLANA_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC || 'https://api.devnet.solana.com';
-const PROGRAM_ID = process.env.NEXT_PUBLIC_PREDICTION_PROGRAM_ID || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const PROGRAM_ID = process.env.NEXT_PUBLIC_PREDICTION_PROGRAM_ID || 'C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5';
 
 // Minimum IDL shape for Anchor 0.30 — using writable/signer fields
 // (avoid TS strict IdlAccount type conflicts)

@@ -28,7 +28,7 @@ export const config = {
   // Solana
   solanaRpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
   solanaKeeperPrivateKey: process.env.SOLANA_KEEPER_PRIVATE_KEY || '',
-  solanaProgramId: process.env.SOLANA_PROGRAM_ID || '',
+  solanaProgramId: process.env.SOLANA_PROGRAM_ID || 'C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5',
 
   // Logging
   logLevel: process.env.LOG_LEVEL || 'info',
