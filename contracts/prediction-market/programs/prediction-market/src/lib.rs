@@ -506,27 +506,20 @@ pub mod prediction_market {
         require!(payout > 0, PredictionMarketError::InsufficientFunds);
 
         // ── SOL transfer (market PDA → winner) ──────────────────
-        let market_key = market.key();
-        let market_seeds = &[
-            b"market",
-            &market.market_id.to_le_bytes()[..],
-            &[market.bump][..],
-        ];
-        let signer_seeds = &[&market_seeds[..]];
-
-        anchor_lang::solana_program::program::invoke_signed(
-            &anchor_lang::solana_program::system_instruction::transfer(
-                &market_key,
-                &winner.key(),
-                payout,
-            ),
-            &[
-                market.to_account_info(),
-                winner.to_account_info(),
-                ctx.accounts.system_program.to_account_info(),
-            ],
-            signer_seeds,
-        )?;
+        // The market PDA is program-owned and carries account data, so a
+        // System Program transfer is forbidden ("`from` must not carry
+        // data"). Debit/credit lamports directly instead — the runtime
+        // allows the owning program to move lamports out of its accounts.
+        let market_info = market.to_account_info();
+        let winner_info = winner.to_account_info();
+        **market_info.try_borrow_mut_lamports()? = market_info
+            .lamports()
+            .checked_sub(payout)
+            .ok_or(PredictionMarketError::InsufficientVaultBalance)?;
+        **winner_info.try_borrow_mut_lamports()? = winner_info
+            .lamports()
+            .checked_add(payout)
+            .ok_or(PredictionMarketError::Overflow)?;
 
         // ── Mark claimed ────────────────────────────────────────
         let bet_mut = &mut ctx.accounts.bet;
@@ -610,27 +603,18 @@ pub mod prediction_market {
         );
 
         // ── Return the original stake ───────────────────────────
-        let market_key = market.key();
-        let market_seeds = &[
-            b"market",
-            &market.market_id.to_le_bytes()[..],
-            &[market.bump][..],
-        ];
-        let signer_seeds = &[&market_seeds[..]];
-
-        anchor_lang::solana_program::program::invoke_signed(
-            &anchor_lang::solana_program::system_instruction::transfer(
-                &market_key,
-                &bettor.key(),
-                bet.amount,
-            ),
-            &[
-                market.to_account_info(),
-                bettor.to_account_info(),
-                ctx.accounts.system_program.to_account_info(),
-            ],
-            signer_seeds,
-        )?;
+        // Direct lamport move — see claim_winnings for why a System
+        // Program transfer cannot be used from a data-carrying PDA.
+        let market_info = market.to_account_info();
+        let bettor_info = bettor.to_account_info();
+        **market_info.try_borrow_mut_lamports()? = market_info
+            .lamports()
+            .checked_sub(refund_amount)
+            .ok_or(PredictionMarketError::InsufficientVaultBalance)?;
+        **bettor_info.try_borrow_mut_lamports()? = bettor_info
+            .lamports()
+            .checked_add(refund_amount)
+            .ok_or(PredictionMarketError::Overflow)?;
 
         // ── Mark refunded ───────────────────────────────────────
         let bet_mut = &mut ctx.accounts.bet;
@@ -802,19 +786,20 @@ pub struct SettleMarket<'info> {
 
     /// The TxLINE program executable.
     /// Devnet: `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`.
-    /// The program ID is validated inside the instruction handler.
+    /// CHECK: the program ID is validated against `TXLINE_DEVNET` inside
+    /// the instruction handler before the CPI is invoked.
     #[account(executable)]
     pub txline_program: AccountInfo<'info>,
 
     /// TxLINE program state account (read-only).
-    /// Passed as-is to the `validate_stat` CPI.
-    /// /// CHECK: validated by the TxLINE program during CPI.
+    /// CHECK: passed as-is to the `validate_stat` CPI; the TxLINE program
+    /// validates it during the CPI.
     pub txline_state: AccountInfo<'info>,
 
     /// TxLINE Merkle proof account that will be consumed by the
     /// `validate_stat` CPI.  Must contain a valid signed proof of
     /// the match outcome.
-    /// /// CHECK: writable, consumed by TxLINE CPI.
+    /// CHECK: writable, validated and consumed by the TxLINE CPI.
     #[account(mut)]
     pub txline_proof_account: AccountInfo<'info>,
 

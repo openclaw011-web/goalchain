@@ -1,18 +1,23 @@
-import * as anchor from "@coral-xyz/anchor";
-import {
-  Program,
-  web3,
-  BN,
-  AnchorProvider,
-  Wallet,
-} from "@coral-xyz/anchor";
-import { expect, assert } from "chai";
-import {
-  Keypair,
-  LAMPORTS_PER_SOL,
-  PublicKey,
-  SystemProgram,
-} from "@solana/web3.js";
+// Default (module.exports) imports so the file loads correctly under BOTH
+// CJS require (ts-node/ts-mocha) and Node's native ESM type-stripping —
+// cjs-module-lexer cannot see anchor's re-exported names (BN, web3, ...),
+// so named ESM imports of them fail on Node 22.18+.
+import anchorPkg from "@coral-xyz/anchor";
+import type * as anchorNs from "@coral-xyz/anchor";
+import chaiPkg from "chai";
+import web3Pkg from "@solana/web3.js";
+import type * as web3Ns from "@solana/web3.js";
+
+const anchor = anchorPkg;
+const { BN, AnchorProvider } = anchorPkg;
+const { expect, assert } = chaiPkg;
+const { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram } = web3Pkg;
+
+type BN = anchorNs.BN;
+type Program<T extends anchorNs.Idl = anchorNs.Idl> = anchorNs.Program<T>;
+type Wallet = anchorNs.Wallet;
+type Keypair = web3Ns.Keypair;
+type PublicKey = web3Ns.PublicKey;
 
 /**
  * These tests cover the full lifecycle of the prediction market program.
@@ -529,19 +534,25 @@ describe("prediction-market", () => {
     let settleMarketId: BN;
     let settleMarketPda: PublicKey;
 
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
     before(async () => {
       settleMarketId = new BN(30);
       settleMarketPda = findMarketPda(settleMarketId)[0];
 
-      // Create and lock
+      // Create with the shortest valid window (resolve_time must be
+      // strictly after lock_time, and lock_time must be in the future),
+      // then lock and wait until resolve_time has passed so settle_market
+      // reaches the TxLINE CPI stage.
+      const settleNow = Math.floor(Date.now() / 1000);
       await program.methods
         .createMarket(
           settleMarketId,
           "SETTLE-TEST",
           MARKET_TYPE,
           ["Alpha", "Bravo"],
-          new BN(now + 1_000_000),
-          new BN(now) // resolve_time = now, so we can settle immediately
+          new BN(settleNow + 2),
+          new BN(settleNow + 3)
         )
         .accounts({
           market: settleMarketPda,
@@ -558,31 +569,25 @@ describe("prediction-market", () => {
           admin: wallet.publicKey,
         })
         .rpc();
+
+      // Let resolve_time pass
+      await sleep(4_000);
     });
 
-    it("executes TxLINE CPI (expected to fail on localnet — needs mock)", async () => {
-      // This test demonstrates the CPI integration.
-      // On localnet without TxLINE this will fail with TxLineCpiFailed.
-      // To make it pass:
-      //   1. Deploy a mock TxLINE program
-      //   2. Update TXLINE_PROGRAM_ID in the program source & redeploy
-      //   3. Submit a valid proof account
-      //
-      // The test structure below shows the correct call format.
-
+    it("rejects settlement without a valid TxLINE proof — market stays Locked", async () => {
+      // Without the TxLINE program (localnet) the `executable` constraint
+      // on txline_program fails; with TxLINE cloned/deployed the CPI itself
+      // rejects the garbage proof. Either way the settlement MUST fail and
+      // the market MUST remain Locked — that is the trustless guarantee.
       const matchIdHash = Buffer.alloc(32, 0); // placeholder hash
       const WINNING_OUTCOME = 0;
 
-      // These would be real TxLINE accounts on Devnet:
       const fakeTxlineState = PublicKey.findProgramAddressSync(
         [Buffer.from("state")],
         TXLINE_PROGRAM_ID
       )[0];
-
       const fakeProofAccount = Keypair.generate().publicKey;
 
-      // Mark the test as pending since it requires TxLINE on Devnet
-      // or a mock program on localnet.
       try {
         await program.methods
           .settleMarket(WINNING_OUTCOME, [...matchIdHash])
@@ -595,14 +600,17 @@ describe("prediction-market", () => {
             txlineProofAccount: fakeProofAccount,
           })
           .rpc();
-        // If we get here miraculously, verify the state
-        const mkt = await program.account.market.fetch(settleMarketPda);
-        expect(mkt.status).to.deep.equal({ settled: {} });
-        expect(mkt.winningOutcome).to.equal(WINNING_OUTCOME);
+        assert.fail("Settlement must not succeed without a valid TxLINE proof");
       } catch (err: any) {
-        // Expected: TxLINE program not available on localnet
-        expect(err.message).to.include("TxLineCpiFailed");
+        expect(err.message).to.match(
+          /TxLineCpiFailed|AccountNotExecutable|ConstraintExecutable|invalid program|does not exist|custom program error/i
+        );
       }
+
+      // The trustless invariant: no valid proof → no settlement.
+      const mkt = await program.account.market.fetch(settleMarketPda);
+      expect(mkt.status).to.deep.equal({ locked: {} });
+      expect(mkt.winningOutcome).to.equal(255); // still OUTCOME_NOT_SET
     });
 
     it("rejects settle on unsettlable market (still Open)", async () => {
@@ -615,7 +623,7 @@ describe("prediction-market", () => {
           MARKET_TYPE,
           ["A", "B"],
           new BN(now + 1_000_000),
-          new BN(now)
+          new BN(now + 2_000_000)
         )
         .accounts({
           market: pda,
@@ -631,7 +639,10 @@ describe("prediction-market", () => {
             market: pda,
             config: configPda,
             admin: wallet.publicKey,
-            txlineProgram: TXLINE_PROGRAM_ID,
+            // Any executable program satisfies the account constraint on
+            // localnet (TxLINE only exists on Devnet); the handler checks
+            // market status BEFORE validating the TxLINE program id.
+            txlineProgram: SystemProgram.programId,
             txlineState: PublicKey.findProgramAddressSync(
               [Buffer.from("state")],
               TXLINE_PROGRAM_ID
@@ -655,7 +666,7 @@ describe("prediction-market", () => {
           MARKET_TYPE,
           ["X", "Y"],
           new BN(now + 1_000_000),
-          new BN(now)
+          new BN(now + 2_000_000)
         )
         .accounts({ market: pda, config: configPda, admin: wallet.publicKey })
         .rpc();
@@ -671,7 +682,9 @@ describe("prediction-market", () => {
             market: pda,
             config: configPda,
             admin: wallet.publicKey,
-            txlineProgram: TXLINE_PROGRAM_ID,
+            // Executable stand-in — the outcome-range check runs before
+            // the TxLINE program-id validation in the handler.
+            txlineProgram: SystemProgram.programId,
             txlineState: PublicKey.findProgramAddressSync(
               [Buffer.from("state")],
               TXLINE_PROGRAM_ID
@@ -690,7 +703,7 @@ describe("prediction-market", () => {
   //  Test: ClaimWinnings
   // ══════════════════════════════════════════════════════════════════
   describe("claim_winnings", () => {
-    it("calculates proportional payout correctly", async () => {
+    it("builds pools from multiple bettors and rejects claims before settlement", async () => {
       // ── Setup: market with known pools ──────────────────────────
       const clId = new BN(40);
       const [clPda] = findMarketPda(clId);
@@ -703,7 +716,7 @@ describe("prediction-market", () => {
           { matchWinner: {} },
           outcomes,
           new BN(now + 1_000_000),
-          new BN(now)
+          new BN(now + 2_000_000)
         )
         .accounts({ market: clPda, config: configPda, admin: wallet.publicKey })
         .rpc();
@@ -736,36 +749,46 @@ describe("prediction-market", () => {
         .signers([bettor3])
         .rpc();
 
-      // Lock & settle (no real TxLINE — skip settlement, manually set)
+      // ── Verify pool accounting ──────────────────────────────────
+      // total = 6 SOL, winning-side pool = 5 SOL, losing side = 1 SOL.
+      // (On settlement: bettor1 → (2×6)/5 = 2.4 SOL, bettor2 → 3.6 SOL.)
+      const marketAcc = await program.account.market.fetch(clPda);
+      expect(marketAcc.totalPool.toString()).to.equal(
+        new BN(6 * LAMPORTS_PER_SOL).toString()
+      );
+      expect(marketAcc.outcomePools[0].toString()).to.equal(
+        new BN(5 * LAMPORTS_PER_SOL).toString()
+      );
+      expect(marketAcc.outcomePools[1].toString()).to.equal(
+        new BN(1 * LAMPORTS_PER_SOL).toString()
+      );
+
+      // The escrow (market PDA) must actually hold the pooled SOL.
+      const escrowBalance = await provider.connection.getBalance(clPda);
+      expect(escrowBalance).to.be.greaterThanOrEqual(6 * LAMPORTS_PER_SOL);
+
+      // ── Lock, then verify claims are rejected pre-settlement ────
       await program.methods
         .lockMarket()
         .accounts({ market: clPda, config: configPda, admin: wallet.publicKey })
         .rpc();
 
-      // For test purposes we manually set settled state via direct
-      // account modification (since we can't call settle_market without
-      // TxLINE).  In production this would be done via settle_market CPI.
-      // We write the market account data directly to simulate settlement.
-      const WINNING_OUTCOME = 0;
-      const marketAcc = await program.account.market.fetch(clPda);
-
-      // ═══════════════════════════════════════════════════════════
-      //  For a proper test, you would call settle_market with a
-      //  mock TxLINE.  The rest of the claim logic is exercised
-      //  below assuming the market is already settled.
-      // ═══════════════════════════════════════════════════════════
-      //
-      // In practice, you would need to:
-      //   1. Deploy a mock TxLINE on localnet
-      //   2. Call settle_market via the program
-      //   3. Then test claim_winnings
-      //
-      // The claim logic itself is straightforward:
-      //   payout = (bet.amount * total_pool) / winning_pool
-      //
-      // With amounts above: total=6 SOL, winning=5 SOL, loser=1 SOL
-      //   bettor1: (2 * 6) / 5 = 2.4 SOL
-      //   bettor2: (3 * 6) / 5 = 3.6 SOL
+      // Settlement requires a valid TxLINE proof (see settle_market
+      // tests). Until then, nobody can extract funds from escrow:
+      try {
+        await program.methods
+          .claimWinnings()
+          .accounts({
+            market: clPda,
+            bet: bet1Pda,
+            winner: bettor1.publicKey,
+          })
+          .signers([bettor1])
+          .rpc();
+        assert.fail("Claim must be rejected before settlement");
+      } catch (err: any) {
+        expect(err.message).to.include("MarketNotSettled");
+      }
     });
   });
 
@@ -928,7 +951,7 @@ describe("prediction-market", () => {
           { matchWinner: {} },
           ["Green", "Red", "Draw"],
           new BN(now + 1_000_000),
-          new BN(now)
+          new BN(now + 2_000_000)
         )
         .accounts({ market: lifePda, config: configPda, admin: wallet.publicKey })
         .rpc();
