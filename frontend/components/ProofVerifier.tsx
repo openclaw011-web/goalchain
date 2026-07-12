@@ -73,7 +73,7 @@ export default function ProofVerifier({ proof }: ProofVerifierProps) {
         <div className="text-4xl mb-4">🔍</div>
         <h3 className="text-lg font-semibold mb-2">No Proof Available</h3>
         <p className="text-sm text-goalchain-text-muted">
-          This match hasn't been settled yet. Check back after the match is complete.
+          This match hasn&apos;t been settled yet. Check back after the match is complete.
         </p>
       </div>
     );

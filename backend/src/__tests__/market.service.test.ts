@@ -7,7 +7,6 @@
 
 import { jest } from '@jest/globals';
 import { MarketService } from '../services/market.service.js';
-import type { NormalisedMatchEvent } from '../types/txline.js';
 
 // ─── Mock DB ─────────────────────────────────────────────────────────────────
 

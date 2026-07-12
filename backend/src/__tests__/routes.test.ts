@@ -38,7 +38,7 @@ async function request(
     });
     const text = await res.text();
     let parsed: unknown = text;
-    try { parsed = text ? JSON.parse(text) : null; } catch {}
+    try { parsed = text ? JSON.parse(text) : null; } catch { /* non-JSON body — return raw text */ }
     return { status: res.status, body: parsed };
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -149,7 +149,7 @@ describe('Markets Router', () => {
 
   describe('GET /api/markets', () => {
     it('should return empty list when no markets exist', async () => {
-      const res = await request(app, 'GET', '/api/markets');
+      const _res = await request(app, 'GET', '/api/markets');
       // Just verify the mock was called
       expect(mock.marketService.getAllMarkets).toHaveBeenCalled();
     });
@@ -181,7 +181,7 @@ describe('Markets Router', () => {
 
   describe('GET /api/markets/:id', () => {
     it('should return 404 for unknown market', async () => {
-      const res = await request(app, 'GET', '/api/markets/unknown');
+      const _res = await request(app, 'GET', '/api/markets/unknown');
       // Verify mock was called
       expect(mock.marketService.getMarket).toHaveBeenCalledWith('unknown');
     });

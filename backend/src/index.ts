@@ -209,7 +209,7 @@ async function main(): Promise<void> {
 
   // Override fixture handler to also feed MarketService
   // (The txlineService polls fixtures autonomously; we duplicate the data to market service)
-  const originalPoll = txlineService.fetchFixtures.bind(txlineService);
+
   // Patch: we already have fixture polling inside txline service that stores in DB.
   // After each poll, the market service processes new fixtures.
   // We'll use a periodic check instead.

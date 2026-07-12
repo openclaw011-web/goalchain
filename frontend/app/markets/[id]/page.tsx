@@ -64,7 +64,7 @@ export default function MarketDetailPage({ params }: { params: { id: string } })
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <div className="text-5xl mb-4">❌</div>
           <h1 className="text-2xl font-bold text-white mb-2">Market Not Found</h1>
-          <p className="text-goalchain-text-muted mb-6">This market doesn't exist or has been removed.</p>
+          <p className="text-goalchain-text-muted mb-6">This market doesn&apos;t exist or has been removed.</p>
           <Link href="/markets" className="btn-primary inline-block">
             Browse Markets
           </Link>

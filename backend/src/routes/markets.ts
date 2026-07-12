@@ -82,7 +82,7 @@ export function createMarketsRouter(
       const liveOdds = marketService.getLiveOdds(market.fixtureId);
 
       // Try to fetch on-chain state if market has a Solana address
-      let onChainState = null;
+      const onChainState = null;
       if (market.solanaMarketAddress) {
         solanaService.getMarketAccount(market.solanaMarketAddress).then((state) => {
           // Fire-and-forget; don't block response

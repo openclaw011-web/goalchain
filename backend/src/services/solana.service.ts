@@ -325,7 +325,6 @@ export class SolanaService {
 
     try {
       if (!this.wallet) return null;
-      const web3 = await import('@solana/web3.js');
       const balance = await this.connection!.getBalance(this.wallet.publicKey);
       return balance;
     } catch (error) {

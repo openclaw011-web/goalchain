@@ -180,12 +180,8 @@ class ApiClient {
     return this.fetch<MerkleProof>(`/proof/${matchId}`);
   }
 
-  async placeBet(bet: { marketId: string; outcomeId: string; amount: number }): Promise<Bet> {
-    return this.fetch<Bet>('/bets', {
-      method: 'POST',
-      body: JSON.stringify(bet),
-    });
-  }
+  // NOTE: bet placement is a real on-chain transaction — see
+  // solanaClient.placeBet in lib/solana.ts (there is no REST betting path).
 
   createWebSocket(): WebSocket {
     try {

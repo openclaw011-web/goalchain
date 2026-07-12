@@ -151,7 +151,7 @@ export default function VerifyPage({ params }: { params: { matchId: string } }) 
               <div className="text-5xl mb-4">🔍</div>
               <h2 className="text-xl font-semibold text-white mb-2">No Proof Found</h2>
               <p className="text-goalchain-text-muted mb-6">
-                This match hasn't been settled yet or doesn't exist. Check back after the match is complete.
+                This match hasn&apos;t been settled yet or doesn&apos;t exist. Check back after the match is complete.
               </p>
               <Link href="/markets" className="btn-primary inline-block">
                 Browse Markets
