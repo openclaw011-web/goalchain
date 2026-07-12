@@ -40,25 +40,31 @@ const headers = {
 
 ## API Endpoints Used
 
+> These are the paths **verified against the live TxLINE Devnet API** with a
+> real subscription (see `scripts/txline-subscribe.mjs`). The subscription
+> itself is an on-chain `subscribe(service_level_id, weeks)` call on the
+> txoracle program — free tier (level 1) costs 0 TXL but requires the TXL
+> Token-2022 ATA to exist.
+
 ### Fixtures
 ```
-GET /api/fixtures
-Response: {
-  fixtures: [{
-    id: string,
-    homeTeam: { id, name, code, flag },
-    awayTeam: { id, name, code, flag },
-    kickoff: string (ISO),
-    competition: string,
-    stage: string,
-    venue: string,
-  }]
-}
+GET /api/fixtures/snapshot
+Response: raw array of entries:
+  [{
+    FixtureId: number,          // numeric id — we use it as on-chain market_id
+    Competition: string,        // "World Cup" (CompetitionId 72)
+    CompetitionId: number,
+    Participant1: string, Participant2: string,
+    Participant1IsHome: boolean,
+    StartTime: number (epoch ms),
+    GameState: string | number,
+  }, ...]
 ```
+Normalised in `backend/src/services/txline.service.ts` (fetchFixtures).
 
 ### Scores Snapshot
 ```
-GET /api/scores/soccer/snapshot
+GET /api/scores/snapshot[/:fixtureId]
 Response: {
   matches: [{
     matchId: string,
@@ -73,7 +79,7 @@ Response: {
 
 ### SSE Scores Stream
 ```
-GET /api/scores/soccer/stream
+GET /api/scores/stream
 Content-Type: text/event-stream
 
 Events:
@@ -95,7 +101,10 @@ Events:
 
 ### Settlement Proof
 ```
-GET /api/scores/soccer/proof/{matchId}
+(path to be confirmed — the proof material corresponds to the daily
+ insert_scores_root / insert_batch_root anchors in the txoracle program;
+ see scripts/idl/txoracle.json)
+GET /api/scores/proof/{matchId}   # assumed shape below
 Response: {
   matchId: string,
   finalScore: { home: number, away: number },

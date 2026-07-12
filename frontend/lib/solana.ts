@@ -69,6 +69,26 @@ export function deriveBetPda(
   )[0];
 }
 
+/**
+ * Resolve a UI market to its on-chain market PDA.
+ * Live (backend-managed) markets carry the address directly; demo markets
+ * carry the numeric id the PDA derives from. Null → not on-chain.
+ */
+export function resolveMarketPda(market: {
+  onchainMarketId?: number;
+  onchainAddress?: string;
+}): PublicKey | null {
+  if (market.onchainAddress) {
+    try {
+      return new PublicKey(market.onchainAddress);
+    } catch {
+      return null;
+    }
+  }
+  if (market.onchainMarketId !== undefined) return deriveMarketPda(market.onchainMarketId);
+  return null;
+}
+
 /** Read-only wallet stub so account reads work before a wallet connects. */
 const READ_ONLY_WALLET = {
   publicKey: PublicKey.default,
@@ -118,7 +138,7 @@ class SolanaClient {
    */
   async placeBet(
     wallet: WalletContextState,
-    onchainMarketId: number,
+    marketPda: PublicKey,
     outcomeIndex: number,
     amountSol: number,
   ): Promise<PlaceBetResult> {
@@ -129,7 +149,6 @@ class SolanaClient {
       const lamports = Math.round(amountSol * LAMPORTS_PER_SOL);
       if (lamports <= 0) throw new Error('Amount must be greater than zero');
 
-      const marketPda = deriveMarketPda(onchainMarketId);
       const betPda = deriveBetPda(marketPda, wallet.publicKey, outcomeIndex);
       const program = this.getProgram(wallet);
 
@@ -158,13 +177,12 @@ class SolanaClient {
    */
   async claimWinnings(
     wallet: WalletContextState,
-    onchainMarketId: number,
+    marketPda: PublicKey,
     outcomeIndex: number,
   ): Promise<PlaceBetResult> {
     try {
       if (!wallet.publicKey) throw new Error('Wallet not connected');
 
-      const marketPda = deriveMarketPda(onchainMarketId);
       const betPda = deriveBetPda(marketPda, wallet.publicKey, outcomeIndex);
       const program = this.getProgram(wallet);
 
@@ -187,9 +205,8 @@ class SolanaClient {
   }
 
   /** Fetch and normalise an on-chain market account. Returns null if absent. */
-  async getOnchainMarket(onchainMarketId: number): Promise<OnchainMarket | null> {
+  async getOnchainMarket(marketPda: PublicKey): Promise<OnchainMarket | null> {
     try {
-      const marketPda = deriveMarketPda(onchainMarketId);
       const program = this.getProgram();
       const account = (await (program.account as never as Record<
         string,

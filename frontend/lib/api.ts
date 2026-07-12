@@ -83,6 +83,7 @@ class ApiClient {
       poolSize,
       volume: poolSize,
       onchainMarketId: m.onchainMarketId ?? undefined,
+      onchainAddress: m.solanaMarketAddress ?? undefined,
       outcomes: [
         { id: `${m.id}-home`, label: m.homeTeam, odds: odds.home, probability: 1 / odds.home, volume: pools.home },
         { id: `${m.id}-draw`, label: 'Draw', odds: odds.draw, probability: 1 / odds.draw, volume: pools.draw },

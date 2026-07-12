@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { solanaClient } from '@/lib/solana';
+import { solanaClient, resolveMarketPda } from '@/lib/solana';
 import { Market, Outcome } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -39,7 +39,8 @@ export default function BetForm({ market, onBetPlaced }: BetFormProps) {
     setErrorMessage('');
 
     try {
-      if (market.onchainMarketId === undefined) {
+      const marketPda = resolveMarketPda(market);
+      if (!marketPda) {
         throw new Error(
           'This market has not been created on-chain yet — betting is disabled.',
         );
@@ -49,7 +50,7 @@ export default function BetForm({ market, onBetPlaced }: BetFormProps) {
 
       const result = await solanaClient.placeBet(
         wallet,
-        market.onchainMarketId,
+        marketPda,
         outcomeIndex,
         parseFloat(amount),
       );

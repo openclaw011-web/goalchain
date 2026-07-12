@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { motion } from 'framer-motion';
 import { PublicKey } from '@solana/web3.js';
-import { solanaClient, deriveMarketPda, deriveBetPda, OnchainMarket } from '@/lib/solana';
+import { solanaClient, resolveMarketPda, deriveBetPda, OnchainMarket } from '@/lib/solana';
 import { Market } from '@/lib/types';
 
 interface ClaimPanelProps {
@@ -35,13 +35,13 @@ export default function ClaimPanel({ market }: ClaimPanelProps) {
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    if (market.onchainMarketId === undefined || !publicKey) return;
+    const marketPda = resolveMarketPda(market);
+    if (!marketPda || !publicKey) return;
 
-    const chainMarket = await solanaClient.getOnchainMarket(market.onchainMarketId);
+    const chainMarket = await solanaClient.getOnchainMarket(marketPda);
     setOnchain(chainMarket);
     if (!chainMarket) return;
 
-    const marketPda = deriveMarketPda(market.onchainMarketId);
     const connection = solanaClient.getConnection();
     const found: ClaimableBet[] = [];
 
@@ -72,17 +72,18 @@ export default function ClaimPanel({ market }: ClaimPanelProps) {
       });
     }
     setBets(found);
-  }, [market.onchainMarketId, publicKey]);
+  }, [market, publicKey]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const handleClaim = async (outcomeIndex: number) => {
-    if (market.onchainMarketId === undefined) return;
+    const marketPda = resolveMarketPda(market);
+    if (!marketPda) return;
     setClaiming(outcomeIndex);
     setError('');
-    const result = await solanaClient.claimWinnings(wallet, market.onchainMarketId, outcomeIndex);
+    const result = await solanaClient.claimWinnings(wallet, marketPda, outcomeIndex);
     setClaiming(null);
     if (result.success) {
       setTxSignature(result.signature);
@@ -92,7 +93,7 @@ export default function ClaimPanel({ market }: ClaimPanelProps) {
     }
   };
 
-  if (!connected || market.onchainMarketId === undefined) return null;
+  if (!connected || !resolveMarketPda(market)) return null;
   if (!onchain || bets.length === 0) return null;
 
   const settled = onchain.status === 'settled';

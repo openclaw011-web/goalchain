@@ -30,6 +30,12 @@ export interface Market {
    * created on-chain (betting is then disabled).
    */
   onchainMarketId?: number;
+  /**
+   * Base58 address of the on-chain market PDA. Set for backend-managed
+   * live markets (markets.solana_market_addr). Takes precedence over
+   * onchainMarketId when resolving the account.
+   */
+  onchainAddress?: string;
 }
 
 export interface Outcome {

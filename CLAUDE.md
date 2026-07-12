@@ -40,7 +40,10 @@ Anchor.toml's default cluster is devnet — plain `anchor test` will try to **de
 ```bash
 node scripts/bootstrap-devnet-markets.mjs  # idempotent: init config + create demo markets 101-110
 node scripts/smoke-test-bet.mjs            # places a real 0.01 SOL bet on market 101
+node scripts/txline-subscribe.mjs          # REAL TxLINE subscription: on-chain subscribe tx + API token → backend/.env.txline
+node scripts/sync-live-markets.mjs         # create on-chain markets for backend's live TxLINE fixtures, link in DB
 ```
+`scripts/idl/txoracle.json` is the TxLINE program's own IDL (`anchor idl fetch 6pW64...yP2J`).
 
 ### Whole-stack
 - `./deploy-local.sh` — builds and starts backend + frontend locally
@@ -58,8 +61,8 @@ Three layers connected by the Solana program ID and the TxLINE oracle:
    - `settle_market` CPIs into the TxLINE devnet program (`6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`) `validate_stat` instruction with Merkle proof bytes; if the proof fails, the market stays Locked. This CPI is the core of the trustless design.
 
 2. **Backend** (`backend/src/`) — Express + WebSocket relay + SQLite (better-sqlite3).
-   - `index.ts` wires everything: `TxlineService` (SSE ingestion from TxLINE with reconnect/backpressure) emits events → `MarketService` (market lifecycle, DB) → `SolanaService` (on-chain reads/settlement keeper). REST routes in `routes/`, DB schema/bridge in `db/schema.ts`.
-   - TxLINE auth is mocked in dev (real auth requires signing a Solana tx); config defaults in `config.ts` make the server run with no `.env`.
+   - `index.ts` wires everything: `TxlineService` (SSE ingestion from TxLINE with reconnect/backpressure) emits events → `MarketService` (market lifecycle, DB) → `KeeperService` (auto on-chain settlement) → `SolanaService` (on-chain reads/writes). REST routes in `routes/`, DB schema/bridge in `db/schema.ts`.
+   - Real TxLINE API paths (discovered by probing with live credentials): `GET /api/fixtures/snapshot` (raw array — see the normaliser in `txline.service.ts`), SSE `/api/scores/stream` + `/api/odds/stream`, `GET /api/scores/snapshot[/:fixtureId]`. Real credentials come from `scripts/txline-subscribe.mjs` → `backend/.env.txline` (gitignored). Without them, config defaults keep the server running with mock auth.
 
 3. **Frontend** (`frontend/`) — Next.js 14 App Router, Tailwind, Solana wallet-adapter, zustand + react-query.
    - `lib/api.ts` silently falls back to `lib/mock-data.ts` on **any** fetch failure (5s timeout). The UI therefore "works" with the backend down — don't mistake mock data for live data when testing.

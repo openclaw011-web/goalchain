@@ -181,19 +181,20 @@ npm run dev
 
 ---
 
-## TxLINE Endpoints Used
+## TxLINE Endpoints Used (verified against the live Devnet API)
 
 | Endpoint | Purpose |
 |---|---|
 | `POST /auth/guest/start` | Get guest JWT for auth |
-| `GET /api/fixtures` | World Cup fixture schedule |
-| `GET /api/scores/soccer/snapshot` | Current match scores |
-| `GET /api/scores/soccer/stream` | Real-time SSE score stream |
+| On-chain `subscribe(service_level, weeks)` | Activate subscription (see `scripts/txline-subscribe.mjs`) |
+| `POST /api/token/activate` | Wallet-signed API-token activation |
+| `GET /api/fixtures/snapshot` | Fixture schedule (raw array, incl. World Cup `CompetitionId 72`) |
+| `GET /api/scores/snapshot[/:fixtureId]` | Current match scores |
+| `GET /api/scores/stream` | Real-time SSE score stream |
 | `GET /api/odds/stream` | Real-time SSE odds stream |
-| `GET /api/scores/soccer/proof/:matchId` | Merkle proof for settlement |
 | On-chain `validate_stat` CPI | Trustless outcome verification |
 
-**Network:** Mainnet (Service Level 12 - Real-time) with Devnet for testing
+**Network:** TxLINE Devnet (real subscription, free tier) + Solana Devnet
 
 ---
 
