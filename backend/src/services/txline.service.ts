@@ -207,9 +207,17 @@ export class TxlineService extends EventEmitter {
     }
   }
 
-  /** Fetch current fixtures snapshot. */
+  /**
+   * Fetch current fixtures snapshot.
+   *
+   * The real TxLINE endpoint is `GET /api/fixtures/snapshot` and returns a
+   * raw array of entries shaped like:
+   *   { FixtureId, Competition, CompetitionId, Participant1, Participant2,
+   *     Participant1IsHome, StartTime (ms), GameState, SportId?, Ts }
+   * We normalise that into TxlineFixturesResponse.
+   */
   async fetchFixtures(): Promise<TxlineFixturesResponse | null> {
-    const url = `${this.options.apiBase}/fixtures`;
+    const url = `${this.options.apiBase}/fixtures/snapshot`;
     try {
       const response = await fetch(url, {
         headers: this.buildHeaders(),
@@ -218,8 +226,42 @@ export class TxlineService extends EventEmitter {
         logger.warn({ status: response.status }, 'Failed to fetch fixtures');
         return null;
       }
-      const data = (await response.json()) as TxlineFixturesResponse;
-      return data;
+      const raw = (await response.json()) as unknown;
+      const entries = Array.isArray(raw) ? raw : (raw as { fixtures?: unknown[] })?.fixtures ?? [];
+
+      const fixtures = (entries as Array<Record<string, unknown>>)
+        .filter((e) => e && e.FixtureId !== undefined)
+        .map((e) => {
+          const p1 = String(e.Participant1 ?? 'Home');
+          const p2 = String(e.Participant2 ?? 'Away');
+          const p1Home = e.Participant1IsHome !== false;
+          const startMs = Number(e.StartTime ?? 0);
+          const gameState = e.GameState;
+          let status: 'scheduled' | 'live' | 'finished' | 'postponed' | 'cancelled';
+          if (typeof gameState === 'string' && ['scheduled', 'live', 'finished', 'postponed', 'cancelled'].includes(gameState)) {
+            status = gameState as typeof status;
+          } else if (startMs > Date.now()) {
+            status = 'scheduled';
+          } else {
+            status = 'live';
+          }
+          return {
+            id: String(e.FixtureId),
+            sport: 'soccer',
+            league: String(e.Competition ?? e.CompetitionId ?? 'unknown'),
+            homeTeam: p1Home ? p1 : p2,
+            awayTeam: p1Home ? p2 : p1,
+            startTime: new Date(startMs || Date.now()).toISOString(),
+            status,
+            metadata: {
+              fixtureId: e.FixtureId,
+              competitionId: e.CompetitionId,
+              fixtureGroupId: e.FixtureGroupId,
+            },
+          };
+        });
+
+      return { fixtures, updatedAt: new Date().toISOString() };
     } catch (error) {
       logger.error({ error }, 'Error fetching fixtures');
       return null;
@@ -229,8 +271,8 @@ export class TxlineService extends EventEmitter {
   /** Fetch score snapshot for a specific match (or all live matches). */
   async fetchScoreSnapshot(matchId?: string): Promise<TxlineScoreSnapshot | TxlineScoreSnapshot[] | null> {
     const url = matchId
-      ? `${this.options.apiBase}/scores/soccer/snapshot/${matchId}`
-      : `${this.options.apiBase}/scores/soccer/snapshot`;
+      ? `${this.options.apiBase}/scores/snapshot/${matchId}`
+      : `${this.options.apiBase}/scores/snapshot`;
     try {
       const response = await fetch(url, {
         headers: this.buildHeaders(),
@@ -250,7 +292,7 @@ export class TxlineService extends EventEmitter {
   // ─── SSE Connection: Scores ────────────────────────────────────────────────
 
   private connectScoresStream(): void {
-    const url = `${this.options.apiBase}/scores/soccer/stream`;
+    const url = `${this.options.apiBase}/scores/stream`;
     logger.info({ url: this.maskUrl(url) }, 'Connecting to scores SSE stream');
 
     try {
@@ -420,7 +462,20 @@ export class TxlineService extends EventEmitter {
         });
       }
 
-      logger.debug({ count: fixtures.fixtures.length }, 'Fixtures polled and upserted');
+      // Notify market service so upcoming World Cup fixtures get markets.
+      const worldCupUpcoming = fixtures.fixtures.filter(
+        (f) =>
+          f.status === 'scheduled' &&
+          (f.league === 'World Cup' || (f.metadata as { competitionId?: number } | undefined)?.competitionId === 72),
+      );
+      if (worldCupUpcoming.length > 0) {
+        this.emit('fixtures:updated', worldCupUpcoming);
+      }
+
+      logger.debug(
+        { count: fixtures.fixtures.length, worldCup: worldCupUpcoming.length },
+        'Fixtures polled and upserted',
+      );
     } catch (error) {
       logger.error({ error }, 'Error during fixture polling');
     }

@@ -10,3 +10,5 @@ tmp/
 .anchor/
 test-ledger/
 data/
+.env.txline
+.env.*.local
