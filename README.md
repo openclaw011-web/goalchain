@@ -21,6 +21,15 @@ GoalChain is a **fully trustless, on-chain prediction market** for the 2026 FIFA
 4. Our program CPIs into TxLINE's `validate_stat` instruction — confirming the outcome is cryptographically true
 5. All winners can now claim their proportional share of the pool — **with no trust required**
 
+### On-Chain Evidence (Devnet — verify it yourself)
+
+| What | Where |
+|---|---|
+| Program | [`C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5`](https://explorer.solana.com/address/C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5?cluster=devnet) |
+| Live demo market (ARG vs BRA, id 101) | [`5SuVuPFq7pet5WnNhiAESfRyERcfaFmVnjvkjKjiHiua`](https://explorer.solana.com/address/5SuVuPFq7pet5WnNhiAESfRyERcfaFmVnjvkjKjiHiua?cluster=devnet) |
+| Real bet into escrow (0.01 SOL) | [transaction](https://explorer.solana.com/tx/2PVPRzPMtxs2Z31er4mj96s211NzHrvUpdhipPWRv2UHfbkrWWrkcd5sa6RntEFcFY9ModVZMc7g3NtG8a9V5t4K?cluster=devnet) |
+| Test suites | 25/25 on-chain lifecycle tests (incl. settle-via-CPI → claim payouts) · 88/88 backend · frontend builds clean |
+
 ---
 
 ## Architecture
