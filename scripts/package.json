@@ -1,0 +1,21 @@
+{
+  "name": "goalchain-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "subscribe-devnet": "ts-node scripts/subscribe-devnet.ts",
+    "keeper": "ts-node backend/src/services/keeper.service.ts"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.30.1",
+    "@solana/spl-token": "^0.4.6",
+    "@solana/web3.js": "^1.95.0",
+    "axios": "^1.7.0",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}

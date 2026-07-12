@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-goalchain-navy text-white font-sans antialiased;
+    min-height: 100vh;
+  }
+
+  ::selection {
+    @apply bg-goalchain-green/30 text-white;
+  }
+
+  :root {
+    --color-green: #00ff88;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-goalchain-surface border border-goalchain-border rounded-xl backdrop-blur-sm;
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-200 hover:bg-goalchain-surface-hover hover:border-goalchain-border-light;
+  }
+
+  .btn-primary {
+    @apply bg-goalchain-green text-goalchain-navy font-semibold px-6 py-2.5 rounded-lg 
+           transition-all duration-200 hover:bg-goalchain-green-dark hover:shadow-lg hover:shadow-goalchain-green/20
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent border border-goalchain-border-light text-white font-medium px-6 py-2.5 rounded-lg
+           transition-all duration-200 hover:bg-goalchain-surface-light hover:border-goalchain-green/40
+           active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-goalchain-text-muted font-medium px-4 py-2 rounded-lg
+           transition-all duration-200 hover:bg-goalchain-surface-light hover:text-white;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full;
+  }
+
+  .badge-live {
+    @apply badge bg-goalchain-green/15 text-goalchain-green;
+  }
+
+  .badge-settled {
+    @apply badge bg-blue-500/15 text-blue-400;
+  }
+
+  .badge-upcoming {
+    @apply badge bg-yellow-500/15 text-yellow-400;
+  }
+
+  .badge-scheduled {
+    @apply badge bg-goalchain-muted/20 text-goalchain-text-muted;
+  }
+
+  .input-field {
+    @apply w-full bg-goalchain-navy-light border border-goalchain-border rounded-lg px-4 py-3 text-white
+           placeholder:text-goalchain-text-muted/50
+           focus:outline-none focus:border-goalchain-green/50 focus:ring-1 focus:ring-goalchain-green/30
+           transition-all duration-200;
+  }
+
+  .skeleton {
+    @apply bg-goalchain-surface-light rounded-lg animate-pulse;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-goalchain-navy;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-goalchain-border-light rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-goalchain-muted;
+  }
+}
+
+/* Number input hide arrows */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}

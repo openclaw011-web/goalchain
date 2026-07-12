@@ -1,0 +1,214 @@
+# TxLINE Integration Guide
+
+## Overview
+
+GoalChain integrates with TxLINE at three levels:
+1. Off-chain data streaming (SSE)
+2. REST API for snapshots and proofs
+3. On-chain CPI via `validate_stat`
+
+---
+
+## Authentication
+
+TxLINE uses a two-credential system:
+
+```typescript
+// Step 1: Get guest JWT (ephemeral, renew on 401)
+const { token: jwt } = await axios.post(
+  'https://txline.txodds.com/auth/guest/start'
+).then(r => r.data);
+
+// Step 2: On-chain subscription tx (done once)
+// (See Quickstart docs for Anchor subscription code)
+
+// Step 3: Activate API token (tied to subscription tx)
+const { token: apiToken } = await axios.post(
+  'https://txline.txodds.com/api/token/activate',
+  { txSig, walletSignature, leagues: [] },
+  { headers: { Authorization: `Bearer ${jwt}` } }
+).then(r => r.data);
+
+// All data API calls:
+const headers = {
+  'Authorization': `Bearer ${jwt}`,
+  'X-Api-Token': apiToken,
+};
+```
+
+---
+
+## API Endpoints Used
+
+### Fixtures
+```
+GET /api/fixtures
+Response: {
+  fixtures: [{
+    id: string,
+    homeTeam: { id, name, code, flag },
+    awayTeam: { id, name, code, flag },
+    kickoff: string (ISO),
+    competition: string,
+    stage: string,
+    venue: string,
+  }]
+}
+```
+
+### Scores Snapshot
+```
+GET /api/scores/soccer/snapshot
+Response: {
+  matches: [{
+    matchId: string,
+    status: "not_started" | "first_half" | "half_time" | "second_half" | "full_time",
+    minute: number,
+    homeScore: number,
+    awayScore: number,
+    events: MatchEvent[]
+  }]
+}
+```
+
+### SSE Scores Stream
+```
+GET /api/scores/soccer/stream
+Content-Type: text/event-stream
+
+Events:
+- data: { type: "score_update", matchId, homeScore, awayScore, minute }
+- data: { type: "match_event", matchId, event: { type, team, player, minute } }
+- data: { type: "match_start", matchId, kickoff }
+- data: { type: "match_end", matchId, finalScore }
+- data: { type: "heartbeat" }
+```
+
+### SSE Odds Stream  
+```
+GET /api/odds/stream
+Content-Type: text/event-stream
+
+Events:
+- data: { type: "odds_update", matchId, home, draw, away, timestamp }
+```
+
+### Settlement Proof
+```
+GET /api/scores/soccer/proof/{matchId}
+Response: {
+  matchId: string,
+  finalScore: { home: number, away: number },
+  winner: "home" | "away" | "draw",
+  merkleLeaf: string,       // hex string
+  merkleProof: string[],    // array of hex strings
+  merkleRoot: string,       // hex string
+  verified: boolean,
+  solanaSlot: number,
+  timestamp: string
+}
+```
+
+---
+
+## On-Chain CPI to validate_stat
+
+TxLINE's Solana program exposes a `validate_stat` instruction that verifies Merkle proofs on-chain. Our Anchor program calls this via CPI.
+
+### TxLINE Program IDs
+- **Mainnet**: `9ExbZjAapQww1vfcisDmrngPinHTEfpjYRWMunJgcKaA`
+- **Devnet**: `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`
+
+### CPI Call Pattern (Rust)
+```rust
+// In settle_market instruction:
+use anchor_lang::solana_program::program::invoke;
+use anchor_lang::solana_program::instruction::{AccountMeta, Instruction};
+
+// Build the validate_stat instruction for TxLINE program
+let accounts = vec![
+    AccountMeta::new_readonly(ctx.accounts.txline_fixture_account.key(), false),
+    AccountMeta::new_readonly(ctx.accounts.stat_proof_account.key(), false),
+];
+
+// Discriminator for validate_stat instruction
+let mut data = vec![0xce, 0x3a, 0x1b, 0x5f, 0x82, 0x4d, 0x9e, 0x07];
+data.extend_from_slice(&proof_data);
+
+let ix = Instruction {
+    program_id: ctx.accounts.txline_program.key(),
+    accounts,
+    data,
+};
+
+invoke(
+    &ix,
+    &[
+        ctx.accounts.txline_fixture_account.to_account_info(),
+        ctx.accounts.stat_proof_account.to_account_info(),
+        ctx.accounts.txline_program.to_account_info(),
+    ],
+)?;
+```
+
+---
+
+## Free Tier Setup (Devnet)
+
+For hackathon development on Devnet:
+
+```bash
+# 1. Generate a devnet wallet
+solana-keygen new --outfile ~/.config/solana/devnet-goalchain.json
+solana config set --keypair ~/.config/solana/devnet-goalchain.json
+solana config set --url devnet
+
+# 2. Fund with devnet SOL
+solana airdrop 2
+
+# 3. Subscribe on-chain (free tier, service level 1)
+# Run the script in scripts/subscribe-devnet.ts
+npx ts-node scripts/subscribe-devnet.ts
+
+# 4. Activate API token
+# Script outputs the API token — save to .env
+```
+
+---
+
+## Error Handling
+
+| Error | Cause | Resolution |
+|---|---|---|
+| 401 on data API | Guest JWT expired | Re-request from `/auth/guest/start` |
+| 403 on activation | Wrong wallet / message / network | Check signing wallet matches subscribe tx |
+| SSE disconnect | Network timeout | Reconnect with exponential backoff |
+| `validate_stat` fails | Invalid proof or wrong matching | Check proof bytes and matchId alignment |
+
+---
+
+## Testing Without Live API
+
+For CI/testing, use the mock TxLINE server:
+
+```typescript
+// backend/src/__mocks__/txline.ts
+export const MOCK_MATCHES = [
+  {
+    matchId: 'match_2026_arg_fra_0712',
+    homeTeam: { name: 'Argentina', code: 'ARG', flag: '🇦🇷' },
+    awayTeam: { name: 'France', code: 'FRA', flag: '🇫🇷' },
+    status: 'full_time',
+    homeScore: 2,
+    awayScore: 1,
+    winner: 'home',
+  }
+];
+
+export const MOCK_PROOF = {
+  matchId: 'match_2026_arg_fra_0712',
+  merkleRoot: '7f3a9b2c1d8e4f5a6b7c8d9e0f1a2b3c4d5e6f70',
+  merkleProof: ['3a1b2c3d...', '9c8d7e6f...'],
+  verified: true,
+};
+```

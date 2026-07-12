@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.next/
+target/
+.env
+.env.local
+*.log
+tmp/
+/tmp/

@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GoalChain — Trustless World Cup Prediction Markets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base: #070b14;
+    --bg-surface: #0d1220;
+    --bg-elevated: #131929;
+    --bg-border: #1e2a3d;
+    --text-primary: #f0f4ff;
+    --text-secondary: #8a9bb5;
+    --text-muted: #4a5878;
+    --accent: #00e87a;
+    --accent-dim: rgba(0,232,122,0.12);
+    --accent-glow: rgba(0,232,122,0.25);
+    --red: #ff4444;
+    --yellow: #f5a623;
+    --blue: #4fa3ff;
+    --purple: #9b59f5;
+    --font: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* TICKER */
+  .ticker-wrap {
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--bg-border);
+    padding: 8px 0;
+    overflow: hidden;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .ticker-track {
+    display: flex;
+    gap: 48px;
+    animation: ticker 35s linear infinite;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .ticker-item { display: flex; align-items: center; gap: 10px; }
+  .ticker-item .teams { color: var(--text-primary); }
+  .ticker-item .score { color: var(--accent); font-weight: 700; font-family: var(--mono); }
+  .ticker-item .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--red); animation: blink 1s infinite;
+  }
+  .ticker-item .minute { color: var(--yellow); font-size: 11px; }
+  @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
+
+  /* NAV */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 40px;
+    border-bottom: 1px solid var(--bg-border);
+    background: rgba(7,11,20,0.95);
+    backdrop-filter: blur(12px);
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 32px; height: 32px; background: var(--accent);
+    border-radius: 8px; display: grid; place-items: center;
+    font-size: 18px;
+  }
+  .logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 28px; align-items: center; }
+  .nav-links a {
+    font-size: 14px; font-weight: 500; color: var(--text-secondary);
+    text-decoration: none; transition: color 0.15s;
+  }
+  .nav-links a:hover { color: var(--text-primary); }
+  .nav-links a.active { color: var(--text-primary); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px; font-size: 14px;
+    font-weight: 600; cursor: pointer; transition: all 0.15s;
+    border: none; text-decoration: none; font-family: var(--font);
+  }
+  .btn-primary {
+    background: var(--accent); color: #000;
+  }
+  .btn-primary:hover { background: #00ff88; transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+  .btn-ghost {
+    background: transparent; color: var(--text-secondary);
+    border: 1px solid var(--bg-border);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .wallet-btn {
+    background: var(--bg-elevated); border: 1px solid var(--bg-border);
+    color: var(--text-primary); padding: 8px 14px; border-radius: 8px;
+    font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;
+    cursor: pointer;
+  }
+  .wallet-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+
+  /* HERO */
+  .hero {
+    padding: 80px 40px 60px;
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--accent-dim); border: 1px solid rgba(0,232,122,0.3);
+    border-radius: 100px; padding: 4px 12px; font-size: 12px;
+    color: var(--accent); font-weight: 600; margin-bottom: 20px;
+  }
+  .hero-badge span { color: var(--text-secondary); font-weight: 400; }
+  h1 {
+    font-size: 56px; font-weight: 900; line-height: 1.05;
+    letter-spacing: -2px; margin-bottom: 20px;
+  }
+  h1 em { color: var(--accent); font-style: normal; }
+  .hero-desc {
+    font-size: 17px; color: var(--text-secondary); line-height: 1.65;
+    max-width: 480px; margin-bottom: 32px;
+  }
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
+  .hero-stats { display: flex; gap: 32px; }
+  .hero-stat { }
+  .hero-stat-val { font-size: 24px; font-weight: 800; color: var(--text-primary); }
+  .hero-stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* HERO CARD (right side) */
+  .hero-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--bg-border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .hero-card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--bg-border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.3);
+    border-radius: 100px; padding: 3px 10px; font-size: 11px;
+    color: var(--red); font-weight: 700;
+  }
+  .match-display {
+    padding: 24px 20px;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px;
+  }
+  .team { text-align: center; }
+  .team-flag { font-size: 40px; margin-bottom: 8px; }
+  .team-name { font-size: 14px; font-weight: 700; }
+  .team-odds {
+    font-size: 12px; color: var(--accent); font-weight: 600;
+    background: var(--accent-dim); border-radius: 4px; padding: 2px 6px; margin-top: 4px;
+    display: inline-block;
+  }
+  .score-display { text-align: center; }
+  .score-num { font-size: 48px; font-weight: 900; line-height: 1; font-family: var(--mono); }
+  .score-min { font-size: 12px; color: var(--yellow); font-weight: 600; margin-top: 4px; }
+  .market-section { padding: 16px 20px; border-top: 1px solid var(--bg-border); }
+  .market-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .outcome-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .outcome-btn {
+    background: var(--bg-elevated); border: 1px solid var(--bg-border);
+    border-radius: 8px; padding: 10px 8px; text-align: center; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .outcome-btn:hover, .outcome-btn.active {
+    border-color: var(--accent); background: var(--accent-dim);
+  }
+  .outcome-btn .label { font-size: 11px; color: var(--text-muted); }
+  .outcome-btn .odds { font-size: 18px; font-weight: 800; color: var(--text-primary); font-family: var(--mono); }
+  .outcome-btn .pool { font-size: 10px; color: var(--text-muted); }
+  .outcome-btn.active .odds { color: var(--accent); }
+  .bet-input-row {
+    display: flex; gap: 8px; margin-top: 12px;
+  }
+  .bet-input {
+    flex: 1; background: var(--bg-elevated); border: 1px solid var(--bg-border);
+    border-radius: 8px; padding: 10px 14px; color: var(--text-primary);
+    font-size: 15px; font-family: var(--mono); font-weight: 600;
+    outline: none;
+  }
+  .potential-win {
+    background: var(--accent-dim); border-radius: 8px; padding: 10px 16px;
+    margin-top: 12px; display: flex; justify-content: space-between;
+    font-size: 13px;
+  }
+  .potential-win .label { color: var(--text-muted); }
+  .potential-win .val { color: var(--accent); font-weight: 700; }
+
+  /* PROOF SECTION */
+  .proof-box {
+    padding: 12px 20px; border-top: 1px solid var(--bg-border);
+    background: rgba(0,232,122,0.04);
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; color: var(--text-secondary);
+  }
+  .proof-icon { color: var(--accent); font-size: 14px; }
+
+  /* MAIN CONTENT */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+
+  /* MARKETS SECTION */
+  .section { padding: 60px 0; }
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px;
+  }
+  .section-title { font-size: 22px; font-weight: 800; }
+  .filter-tabs { display: flex; gap: 4px; }
+  .filter-tab {
+    padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    cursor: pointer; color: var(--text-muted); border: none; background: transparent;
+    font-family: var(--font);
+  }
+  .filter-tab.active {
+    background: var(--bg-elevated); color: var(--text-primary);
+  }
+  .markets-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  /* MARKET CARD */
+  .market-card {
+    background: var(--bg-surface); border: 1px solid var(--bg-border);
+    border-radius: 12px; overflow: hidden; transition: border-color 0.15s;
+    cursor: pointer;
+  }
+  .market-card:hover { border-color: rgba(0,232,122,0.4); }
+  .market-card-header {
+    padding: 14px 16px 10px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .match-teams { font-size: 15px; font-weight: 700; }
+  .match-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .status-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .status-live { background: rgba(255,68,68,0.15); color: var(--red); }
+  .status-open { background: rgba(0,232,122,0.12); color: var(--accent); }
+  .status-settled { background: rgba(138,155,181,0.1); color: var(--text-muted); }
+  .market-type-label {
+    padding: 0 16px 10px; font-size: 11px; color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .outcomes-row {
+    padding: 0 16px 14px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+  }
+  .outcome-pill {
+    background: var(--bg-elevated); border-radius: 6px; padding: 8px 6px;
+    text-align: center;
+  }
+  .outcome-pill .oteam { font-size: 10px; color: var(--text-muted); }
+  .outcome-pill .oodds { font-size: 16px; font-weight: 800; font-family: var(--mono); }
+  .market-card-footer {
+    padding: 10px 16px; border-top: 1px solid var(--bg-border);
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .pool-val { color: var(--text-secondary); font-weight: 600; }
+  .countdown { color: var(--yellow); }
+
+  /* POOL BAR */
+  .pool-bar-wrap { padding: 0 16px 12px; }
+  .pool-bar { height: 4px; background: var(--bg-elevated); border-radius: 2px; display: flex; overflow: hidden; gap: 1px; }
+  .pool-seg { height: 100%; border-radius: 2px; }
+
+  /* STATS BAR */
+  .stats-bar {
+    background: var(--bg-surface); border-radius: 12px;
+    border: 1px solid var(--bg-border);
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    margin-bottom: 40px;
+  }
+  .stat-cell {
+    padding: 20px 24px; border-right: 1px solid var(--bg-border);
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-val { font-size: 28px; font-weight: 900; font-family: var(--mono); }
+  .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  /* PROOF VERIFIER */
+  .proof-verifier {
+    background: var(--bg-surface); border: 1px solid var(--bg-border);
+    border-radius: 16px; padding: 24px;
+  }
+  .proof-verifier h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .proof-step {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 12px 0; border-bottom: 1px solid var(--bg-border);
+  }
+  .proof-step:last-child { border-bottom: none; }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: #000;
+    font-size: 11px; font-weight: 800; display: grid; place-items: center; flex-shrink: 0;
+  }
+  .step-num.pending {
+    background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--bg-border);
+  }
+  .step-content { flex: 1; }
+  .step-title { font-size: 13px; font-weight: 600; }
+  .step-detail { font-size: 11px; color: var(--text-muted); font-family: var(--mono); margin-top: 3px; word-break: break-all; }
+
+  /* LEADERBOARD */
+  .lb-row {
+    display: grid; grid-template-columns: 32px 1fr auto auto auto;
+    gap: 16px; align-items: center;
+    padding: 12px 16px; border-bottom: 1px solid var(--bg-border);
+    font-size: 14px;
+  }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-rank { font-size: 13px; font-weight: 700; color: var(--text-muted); text-align: center; }
+  .lb-rank.gold { color: #f5a623; }
+  .lb-rank.silver { color: #9b9b9b; }
+  .lb-rank.bronze { color: #cd7f32; }
+  .lb-user { display: flex; align-items: center; gap: 10px; }
+  .lb-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+    display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #000;
+  }
+  .lb-addr { font-size: 13px; color: var(--text-secondary); font-family: var(--mono); }
+  .lb-winrate { font-size: 13px; color: var(--text-secondary); text-align: right; }
+  .lb-bets { font-size: 13px; color: var(--text-muted); text-align: right; }
+  .lb-winnings { font-size: 14px; font-weight: 700; color: var(--accent); font-family: var(--mono); text-align: right; }
+
+  /* TXLINE BADGE */
+  .txline-banner {
+    background: var(--bg-surface); border: 1px solid rgba(0,232,122,0.2);
+    border-radius: 12px; padding: 20px 24px;
+    display: flex; align-items: center; gap: 20px; margin-bottom: 32px;
+  }
+  .txline-logo { font-size: 13px; font-weight: 700; color: var(--accent); font-family: var(--mono); }
+  .txline-desc { font-size: 13px; color: var(--text-secondary); flex: 1; }
+  .feed-indicator {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--accent); font-weight: 600;
+  }
+  .feed-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: blink 1.5s infinite; }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--bg-border); padding: 32px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+    color: var(--text-muted); font-size: 13px;
+  }
+  .footer-links { display: flex; gap: 20px; }
+  .footer-links a { color: var(--text-muted); text-decoration: none; }
+  .footer-links a:hover { color: var(--text-secondary); }
+
+  /* TWEAKS panel */
+  .tweaks {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--bg-elevated); border: 1px solid var(--bg-border);
+    border-radius: 10px; padding: 14px; font-size: 12px;
+    z-index: 200; min-width: 160px;
+  }
+  .tweaks-title { font-weight: 700; margin-bottom: 10px; color: var(--text-secondary); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
+  .tweak-row { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; align-items: center; color: var(--text-muted); }
+  .tweak-toggle {
+    width: 32px; height: 18px; background: var(--accent); border-radius: 9px;
+    cursor: pointer; position: relative;
+  }
+  .tweak-toggle::after {
+    content: ''; position: absolute; top: 2px; right: 2px;
+    width: 14px; height: 14px; background: #000; border-radius: 50%;
+    transition: transform 0.2s;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; }
+    .markets-grid { grid-template-columns: 1fr 1fr; }
+    nav { padding: 14px 20px; }
+    .hero { padding: 40px 20px; }
+    .container { padding: 0 20px; }
+    h1 { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LIVE SCORE TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-track" id="ticker">
+    <div class="ticker-item"><div class="live-dot"></div><span class="teams">🇦🇷 ARG vs FRA 🇫🇷</span><span class="score">2 – 1</span><span class="minute">67'</span></div>
+    <div class="ticker-item"><div class="live-dot"></div><span class="teams">🇧🇷 BRA vs ENG 🏴󠁧󠁢󠁥󠁮󠁧󠁿</span><span class="score">0 – 0</span><span class="minute">34'</span></div>
+    <div class="ticker-item" style="color:var(--text-muted)"><span class="teams">🇩🇪 GER vs ESP 🇪🇸</span><span class="score" style="color:var(--text-muted)">FT 1 – 2</span></div>
+    <div class="ticker-item" style="color:var(--text-muted)"><span class="teams">🇵🇹 POR vs URU 🇺🇾</span><span class="score" style="color:var(--text-muted)">FT 3 – 0</span></div>
+    <div class="ticker-item"><span style="color:var(--text-muted); font-size:11px;">Powered by TxLINE · Cryptographically Verified ✓</span></div>
+    <!-- duplicate for seamless loop -->
+    <div class="ticker-item"><div class="live-dot"></div><span class="teams">🇦🇷 ARG vs FRA 🇫🇷</span><span class="score">2 – 1</span><span class="minute">67'</span></div>
+    <div class="ticker-item"><div class="live-dot"></div><span class="teams">🇧🇷 BRA vs ENG 🏴󠁧󠁢󠁥󠁮󠁧󠁿</span><span class="score">0 – 0</span><span class="minute">34'</span></div>
+    <div class="ticker-item" style="color:var(--text-muted)"><span class="teams">🇩🇪 GER vs ESP 🇪🇸</span><span class="score" style="color:var(--text-muted)">FT 1 – 2</span></div>
+    <div class="ticker-item" style="color:var(--text-muted)"><span class="teams">🇵🇹 POR vs URU 🇺🇾</span><span class="score" style="color:var(--text-muted)">FT 3 – 0</span></div>
+    <div class="ticker-item"><span style="color:var(--text-muted); font-size:11px;">Powered by TxLINE · Cryptographically Verified ✓</span></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo"><div class="logo-icon">⚽</div>Goal<span>Chain</span></a>
+  <div class="nav-links">
+    <a href="#markets" class="active">Markets</a>
+    <a href="#leaderboard">Leaderboard</a>
+    <a href="#verify">Verify</a>
+    <a href="#">Docs</a>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <div class="wallet-btn"><div class="wallet-dot"></div>&nbsp;7xKp…4mR2</div>
+    <button class="btn btn-primary">Place Bet</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-badge">⚡ <span>Trustless · Auto-settled · Powered by TxLINE</span></div>
+    <h1>Predict.<br>Verify.<br><em>Win.</em></h1>
+    <p class="hero-desc">
+      World Cup prediction markets settled by cryptographic proof — not by trust.
+      Your winnings are locked in Solana escrow and released automatically when TxLINE
+      verifies the result on-chain.
+    </p>
+    <div class="hero-actions">
+      <a href="#markets" class="btn btn-primary">Browse Markets →</a>
+      <a href="#verify" class="btn btn-ghost">How Verification Works</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val">$284k</div>
+        <div class="hero-stat-label">Total Volume</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">104</div>
+        <div class="hero-stat-label">Markets</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">2,190</div>
+        <div class="hero-stat-label">Predictors</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE MARKET CARD -->
+  <div class="hero-card">
+    <div class="hero-card-header">
+      <div style="font-size:13px;font-weight:600;">Argentina vs France · QF</div>
+      <div class="live-badge">● LIVE 67'</div>
+    </div>
+    <div class="match-display">
+      <div class="team">
+        <div class="team-flag">🇦🇷</div>
+        <div class="team-name">Argentina</div>
+        <div class="team-odds">2.10</div>
+      </div>
+      <div class="score-display">
+        <div class="score-num">2 <span style="color:var(--text-muted)">–</span> 1</div>
+        <div class="score-min">67' ●</div>
+      </div>
+      <div class="team">
+        <div class="team-flag">🇫🇷</div>
+        <div class="team-name">France</div>
+        <div class="team-odds">3.40</div>
+      </div>
+    </div>
+    <div class="market-section">
+      <div class="market-label">Match Winner — Pick your outcome</div>
+      <div class="outcome-btns">
+        <div class="outcome-btn active" onclick="selectOutcome(this)">
+          <div class="label">Argentina</div>
+          <div class="odds">2.10</div>
+          <div class="pool">$42k pool</div>
+        </div>
+        <div class="outcome-btn" onclick="selectOutcome(this)">
+          <div class="label">Draw</div>
+          <div class="odds">3.80</div>
+          <div class="pool">$18k pool</div>
+        </div>
+        <div class="outcome-btn" onclick="selectOutcome(this)">
+          <div class="label">France</div>
+          <div class="odds">3.40</div>
+          <div class="pool">$28k pool</div>
+        </div>
+      </div>
+      <div class="bet-input-row">
+        <input class="bet-input" type="text" value="2.5 SOL" id="betInput" oninput="updatePotential()">
+        <button class="btn btn-primary" style="white-space:nowrap;">Place Bet</button>
+      </div>
+      <div class="potential-win">
+        <span class="label">Potential win</span>
+        <span class="val" id="potentialWin">5.25 SOL (~$890)</span>
+      </div>
+    </div>
+    <div class="proof-box">
+      <span class="proof-icon">🔐</span>
+      <span>Settlement auto-triggered by TxLINE Merkle proof · <strong style="color:var(--accent)">On-chain verified</strong></span>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<div class="container">
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-cell">
+      <div class="stat-val" style="color:var(--accent)">$284,391</div>
+      <div class="stat-label">Total Volume</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val">104</div>
+      <div class="stat-label">Active Markets</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val">2,190</div>
+      <div class="stat-label">Predictors</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val" style="color:var(--accent)">100%</div>
+      <div class="stat-label">Auto-Settled</div>
+    </div>
+  </div>
+
+  <!-- TXLINE BANNER -->
+  <div class="txline-banner">
+    <div class="txline-logo">[ TxLINE ]</div>
+    <div class="txline-desc">Real-time cryptographically signed World Cup data. Every market resolution is backed by a Merkle proof anchored on Solana — no trusted admin, no manual oracle.</div>
+    <div class="feed-indicator"><div class="feed-dot"></div>Feed Connected</div>
+  </div>
+
+  <!-- MARKETS -->
+  <section class="section" id="markets">
+    <div class="section-header">
+      <div class="section-title">⚽ Live & Upcoming Markets</div>
+      <div style="display:flex;gap:16px;align-items:center;">
+        <div class="filter-tabs">
+          <button class="filter-tab active">All</button>
+          <button class="filter-tab">Live</button>
+          <button class="filter-tab">Upcoming</button>
+          <button class="filter-tab">Settled</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="markets-grid">
+      <!-- Card 1: Live -->
+      <div class="market-card">
+        <div class="market-card-header">
+          <div>
+            <div class="match-teams">🇦🇷 Argentina vs France 🇫🇷</div>
+            <div class="match-meta">QF · Group C · Jul 12, 2026</div>
+          </div>
+          <div class="status-badge status-live">● Live</div>
+        </div>
+        <div class="market-type-label">Match Winner</div>
+        <div class="outcomes-row">
+          <div class="outcome-pill"><div class="oteam">ARG</div><div class="oodds">2.10</div></div>
+          <div class="outcome-pill"><div class="oteam">Draw</div><div class="oodds">3.80</div></div>
+          <div class="outcome-pill"><div class="oteam">FRA</div><div class="oodds">3.40</div></div>
+        </div>
+        <div class="pool-bar-wrap">
+          <div class="pool-bar">
+            <div class="pool-seg" style="flex:47;background:var(--accent);opacity:0.7;"></div>
+            <div class="pool-seg" style="flex:20;background:var(--yellow);opacity:0.7;"></div>
+            <div class="pool-seg" style="flex:33;background:var(--blue);opacity:0.7;"></div>
+          </div>
+        </div>
+        <div class="market-card-footer">
+          <span>Pool: <span class="pool-val">$88,400</span></span>
+          <span class="countdown">LOCKED · 67'</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Live -->
+      <div class="market-card">
+        <div class="market-card-header">
+          <div>
+            <div class="match-teams">🇧🇷 Brazil vs England 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div>
+            <div class="match-meta">QF · Group D · Jul 12, 2026</div>
+          </div>
+          <div class="status-badge status-live">● Live</div>
+        </div>
+        <div class="market-type-label">Over / Under 2.5 Goals</div>
+        <div class="outcomes-row">
+          <div class="outcome-pill" style="grid-column:span 1"><div class="oteam">Over 2.5</div><div class="oodds">1.95</div></div>
+          <div class="outcome-pill" style="grid-column:span 1"><div class="oteam">Exact 2</div><div class="oodds">4.50</div></div>
+          <div class="outcome-pill" style="grid-column:span 1"><div class="oteam">Under 2.5</div><div class="oodds">2.10</div></div>
+        </div>
+        <div class="pool-bar-wrap">
+          <div class="pool-bar">
+            <div class="pool-seg" style="flex:52;background:var(--accent);opacity:0.7;"></div>
+            <div class="pool-seg" style="flex:8;background:var(--yellow);opacity:0.7;"></div>
+            <div class="pool-seg" style="flex:40;background:var(--blue);opacity:0.7;"></div>
+          </div>
+        </div>
+        <div class="market-card-footer">
+          <span>Pool: <span class="pool-val">$56,200</span></span>
+          <span class="countdown">LOCKED · 34'</span>
+        </div>
+      </div>
+
+      <!-- Card 3: Upcoming -->
+      <div class="market-card">
+        <div class="market-card-header">
+          <div>
+            <div class="match-teams">🇩🇪 Germany vs Spain 🇪🇸</div>
+            <div class="match-meta">QF · Group A · Jul 13, 2026</div>
+          </div>
+          <div class="status-badge status-open">Open</div>
+        </div>
+        <div class="market-type-label">Match Winner</div>
+        <div class="outcomes-row">
+          <div class="outcome-pill"><div class="oteam">GER</div><div class="oodds">2.55</div></div>
+          <div class="outcome-pill"><div class="oteam">Draw</div><div class="oodds">3.20</div></div>
+          <div class="outcome-pill"><div class="oteam">ESP</div><div class="oodds">2.80</div></div>
+        </div>
+        <div class="pool-bar-wrap">
+          <div class="pool-bar">
+            <div class="pool-seg" style="flex:39;background:var(--accent);opacity:0.7;"></div>
+            <div class="pool-seg" style="flex:25;background:var(--yellow);opacity:0.7;"></div>
+            <div class="pool-seg" style="flex:36;background:var(--blue);opacity:0.7;"></div>
+          </div>
+        </div>
+        <div class="market-card-footer">
+          <span>Pool: <span class="pool-val">$34,700</span></span>
+          <span class="countdown">Closes in 18h 22m</span>
+        </div>
+      </div>
+
+      <!-- Card 4: Upcoming -->
+      <div class="market-card">
+        <div class="market-card-header">
+          <div>
+            <div class="match-teams">🇵🇹 Portugal vs Morocco 🇲🇦</div>
+            <div class="match-meta">QF · Group B · Jul 13, 2026</div>
+          </div>
+          <div class="status-badge status-open">Open</div>
+        </div>
+        <div class="market-type-label">Both Teams to Score?</div>
+        <div class="outcomes-row">
+          <div class="outcome-pill" style="grid-column:span 1.5"><div class="oteam">Yes — BTTS</div><div class="oodds">1.72</div></div>
+          <div class="outcome-pill" style="grid-column:span 1.5"><div class="oteam">No — Clean Sheet</div><div class="oodds">2.10</div></div>
+          <div class="outcome-pill"><div class="oteam">—</div><div class="oodds" style="font-size:12px;color:var(--text-muted)">—</div></div>
+        </div>
+        <div class="pool-bar-wrap">
+          <div class="pool-bar">
+            <div class="pool-seg" style="flex:61;background:var(--accent);opacity:0.7;"></div>
+            <div class="pool-seg" style="flex:39;background:var(--blue);opacity:0.7;"></div>
+          </div>
+        </div>
+        <div class="market-card-footer">
+          <span>Pool: <span class="pool-val">$21,100</span></span>
+          <span class="countdown">Closes in 22h 07m</span>
+        </div>
+      </div>
+
+      <!-- Card 5: Settled -->
+      <div class="market-card" style="opacity:0.75;">
+        <div class="market-card-header">
+          <div>
+            <div class="match-teams">🇩🇪 Germany vs Spain 🇪🇸</div>
+            <div class="match-meta">Group Stage · Jul 8, 2026</div>
+          </div>
+          <div class="status-badge status-settled">Settled ✓</div>
+        </div>
+        <div class="market-type-label">Match Winner — <strong style="color:var(--accent)">Spain Won</strong></div>
+        <div class="outcomes-row">
+          <div class="outcome-pill" style="opacity:0.5"><div class="oteam">GER</div><div class="oodds">2.60</div></div>
+          <div class="outcome-pill" style="opacity:0.5"><div class="oteam">Draw</div><div class="oodds">3.15</div></div>
+          <div class="outcome-pill" style="border:1px solid var(--accent);background:var(--accent-dim)"><div class="oteam" style="color:var(--accent)">ESP ✓</div><div class="oodds" style="color:var(--accent)">2.80</div></div>
+        </div>
+        <div class="pool-bar-wrap">
+          <div class="pool-bar">
+            <div class="pool-seg" style="flex:37;background:var(--text-muted);opacity:0.4;"></div>
+            <div class="pool-seg" style="flex:22;background:var(--text-muted);opacity:0.4;"></div>
+            <div class="pool-seg" style="flex:41;background:var(--accent);opacity:0.7;"></div>
+          </div>
+        </div>
+        <div class="market-card-footer">
+          <span>Pool: <span class="pool-val">$68,300</span></span>
+          <span style="color:var(--accent);font-size:11px;">🔐 Proof verified on-chain</span>
+        </div>
+      </div>
+
+      <!-- Card 6: Settled -->
+      <div class="market-card" style="opacity:0.75;">
+        <div class="market-card-header">
+          <div>
+            <div class="match-teams">🇵🇹 Portugal vs Uruguay 🇺🇾</div>
+            <div class="match-meta">Group Stage · Jul 9, 2026</div>
+          </div>
+          <div class="status-badge status-settled">Settled ✓</div>
+        </div>
+        <div class="market-type-label">Total Goals — <strong style="color:var(--accent)">Over 2.5 (3–0)</strong></div>
+        <div class="outcomes-row">
+          <div class="outcome-pill" style="border:1px solid var(--accent);background:var(--accent-dim)"><div class="oteam" style="color:var(--accent)">Over ✓</div><div class="oodds" style="color:var(--accent)">1.90</div></div>
+          <div class="outcome-pill" style="opacity:0.5"><div class="oteam">Exact 2</div><div class="oodds">4.2</div></div>
+          <div class="outcome-pill" style="opacity:0.5"><div class="oteam">Under</div><div class="oodds">2.05</div></div>
+        </div>
+        <div class="pool-bar-wrap">
+          <div class="pool-bar">
+            <div class="pool-seg" style="flex:58;background:var(--accent);opacity:0.7;"></div>
+            <div class="pool-seg" style="flex:12;background:var(--text-muted);opacity:0.4;"></div>
+            <div class="pool-seg" style="flex:30;background:var(--text-muted);opacity:0.4;"></div>
+          </div>
+        </div>
+        <div class="market-card-footer">
+          <span>Pool: <span class="pool-val">$41,800</span></span>
+          <span style="color:var(--accent);font-size:11px;">🔐 Proof verified on-chain</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROOF VERIFIER -->
+  <section class="section" id="verify">
+    <div class="section-header">
+      <div class="section-title">🔐 TxLINE Proof Verifier</div>
+      <span style="font-size:13px;color:var(--text-muted);">Match: Germany vs Spain · Jul 8, 2026 · FT 1–2</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div class="proof-verifier">
+        <h3>✅ Settlement Verification Chain</h3>
+        <div class="proof-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">TxLINE Match Data Received</div>
+            <div class="step-detail">matchId: match_2026_ger_esp_0708<br>result: {home: 1, away: 2, winner: "esp"}</div>
+          </div>
+        </div>
+        <div class="proof-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Merkle Proof Retrieved</div>
+            <div class="step-detail">leaf: sha256(match_2026_ger_esp_0708:2:1:esp)<br>root: 7f3a9b2c1d8e4f5a6b7c8d9e0f1a2b3c...</div>
+          </div>
+        </div>
+        <div class="proof-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">validate_stat CPI Called</div>
+            <div class="step-detail">tx: 3xK9...mR2p · slot: 348,201,447<br>Program: 6pW64gN1s2uqjHkn1unFeEjAwJkP...</div>
+          </div>
+        </div>
+        <div class="proof-step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-title">Proof Verified On-Chain ✓</div>
+            <div class="step-detail">TxLINE program confirmed root match · winning_outcome set to "esp"</div>
+          </div>
+        </div>
+        <div class="proof-step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <div class="step-title">Winnings Available for Claim</div>
+            <div class="step-detail">Pool: $68,300 · Spain backers: $28,003 distributed · 2.80x returned</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="proof-verifier" style="margin-bottom:16px;">
+          <h3>📊 Raw TxLINE Proof Data</h3>
+          <div style="background:var(--bg-base);border-radius:8px;padding:14px;font-family:var(--mono);font-size:11px;color:var(--accent);line-height:1.8;overflow:auto;">
+{<br>
+&nbsp;&nbsp;"matchId": "match_2026_ger_esp_0708",<br>
+&nbsp;&nbsp;"finalScore": { "home": 1, "away": 2 },<br>
+&nbsp;&nbsp;"winner": "away",<br>
+&nbsp;&nbsp;"merkleRoot": "7f3a9b2c1d8e4f5a...",<br>
+&nbsp;&nbsp;"merkleProof": ["3a1b...", "9c8d...", "..."],<br>
+&nbsp;&nbsp;"solanaSlot": 348201447,<br>
+&nbsp;&nbsp;"txSignature": "3xK9mR2p...",<br>
+&nbsp;&nbsp;"verified": true<br>
+}
+          </div>
+        </div>
+        <div class="proof-verifier">
+          <h3>🔗 On-Chain References</h3>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:2;">
+            <div>Market PDA: <span style="font-family:var(--mono);color:var(--text-primary)">Goa1...ChAi</span></div>
+            <div>Settlement Tx: <span style="font-family:var(--mono);color:var(--accent)">3xK9mR2p4...view ↗</span></div>
+            <div>TxLINE Program: <span style="font-family:var(--mono)">6pW64gN1...</span></div>
+            <div>Block Time: <span style="color:var(--text-primary)">2026-07-08 · 22:14:07 UTC</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section class="section" id="leaderboard">
+    <div class="section-header">
+      <div class="section-title">🏆 Top Predictors</div>
+      <a href="#" style="font-size:13px;color:var(--text-muted);text-decoration:none;">View All →</a>
+    </div>
+    <div style="background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:12px;overflow:hidden;">
+      <div class="lb-row" style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">
+        <span>#</span><span>Predictor</span><span style="text-align:right;">Win Rate</span><span style="text-align:right;">Bets</span><span style="text-align:right;">Winnings</span>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank gold">1</div>
+        <div class="lb-user"><div class="lb-avatar" style="background:linear-gradient(135deg,#f5a623,#ff6b6b)">MV</div><div><div style="font-size:14px;font-weight:600;">maverick.sol</div><div class="lb-addr">7xKp…4mR2</div></div></div>
+        <div class="lb-winrate" style="color:var(--accent)">84%</div>
+        <div class="lb-bets">47</div>
+        <div class="lb-winnings">+$12,840</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank silver">2</div>
+        <div class="lb-user"><div class="lb-avatar" style="background:linear-gradient(135deg,#9b9b9b,#666)">CR</div><div><div style="font-size:14px;font-weight:600;">cryptorodri.sol</div><div class="lb-addr">3aBc…9qR1</div></div></div>
+        <div class="lb-winrate" style="color:var(--accent)">79%</div>
+        <div class="lb-bets">63</div>
+        <div class="lb-winnings">+$9,210</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank bronze">3</div>
+        <div class="lb-user"><div class="lb-avatar" style="background:linear-gradient(135deg,#cd7f32,#a0522d)">ST</div><div><div style="font-size:14px;font-weight:600;">soccertitan.sol</div><div class="lb-addr">9mXz…2wP5</div></div></div>
+        <div class="lb-winrate" style="color:var(--yellow)">71%</div>
+        <div class="lb-bets">89</div>
+        <div class="lb-winnings">+$7,450</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank">4</div>
+        <div class="lb-user"><div class="lb-avatar" style="background:linear-gradient(135deg,#4fa3ff,#9b59f5)">WF</div><div><div style="font-size:14px;font-weight:600;">worldcupfan.sol</div><div class="lb-addr">2nYk…8tL6</div></div></div>
+        <div class="lb-winrate">68%</div>
+        <div class="lb-bets">112</div>
+        <div class="lb-winnings">+$5,920</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank">5</div>
+        <div class="lb-user"><div class="lb-avatar" style="background:linear-gradient(135deg,#00e87a,#009944)">OP</div><div><div style="font-size:14px;font-weight:600;">onchainpunter.sol</div><div class="lb-addr">5qMn…1kB3</div></div></div>
+        <div class="lb-winrate">65%</div>
+        <div class="lb-bets">78</div>
+        <div class="lb-winnings">+$4,180</div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /container -->
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div style="font-weight:700;margin-bottom:4px;">⚽ GoalChain</div>
+    <div>Trustless World Cup prediction markets · Powered by TxLINE + Solana</div>
+  </div>
+  <div class="footer-links">
+    <a href="#">GitHub</a>
+    <a href="#">Docs</a>
+    <a href="#">TxLINE</a>
+    <a href="#">Verify</a>
+  </div>
+  <div style="text-align:right;">
+    <div style="color:var(--accent);font-weight:600;font-size:12px;">TxODDS × Superteam Hackathon 2026</div>
+    <div>Prediction Markets Track</div>
+  </div>
+</footer>
+
+<!-- TWEAKS -->
+<div class="tweaks">
+  <div class="tweaks-title">View Options</div>
+  <div class="tweak-row"><span>Live Feed</span><div class="tweak-toggle"></div></div>
+  <div class="tweak-row"><span>Show Proofs</span><div class="tweak-toggle" style="background:var(--bg-border)"></div></div>
+  <div class="tweak-row"><span>SOL/USDC</span><div class="tweak-toggle"></div></div>
+</div>
+
+<script>
+  function selectOutcome(el) {
+    document.querySelectorAll('.outcome-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    updatePotential();
+  }
+  function updatePotential() {
+    const active = document.querySelector('.outcome-btn.active');
+    if (!active) return;
+    const odds = parseFloat(active.querySelector('.odds').textContent);
+    const input = document.getElementById('betInput').value;
+    const amount = parseFloat(input) || 0;
+    const win = (amount * odds).toFixed(2);
+    const usd = (win * 169).toFixed(0);
+    document.getElementById('potentialWin').textContent = `${win} SOL (~$${usd})`;
+  }
+  document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

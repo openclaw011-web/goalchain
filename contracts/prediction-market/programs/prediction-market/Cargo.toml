@@ -1,0 +1,12 @@
+[package]
+name = "prediction-market"
+version = "0.1.0"
+description = "Solana Anchor prediction market with TxLINE oracle CPI settlement — World Cup Hackathon"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "prediction_market"
+
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }

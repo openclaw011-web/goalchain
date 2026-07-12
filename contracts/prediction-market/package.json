@@ -1,0 +1,26 @@
+{
+  "name": "prediction-market",
+  "version": "0.1.0",
+  "description": "World Cup Prediction Market — Anchor program with TxLINE Oracle CPI",
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "test": "anchor test",
+    "build": "anchor build",
+    "deploy": "anchor deploy",
+    "lint": "prettier --check ."
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.0"
+  },
+  "devDependencies": {
+    "chai": "^5.1.0",
+    "mocha": "^10.4.0",
+    "ts-mocha": "^10.0.0",
+    "@types/node": "^20.12.0",
+    "@types/bn.js": "^5.1.0",
+    "@types/chai": "^4.3.16",
+    "@types/mocha": "^10.0.6",
+    "typescript": "^5.4.0"
+  }
+}
