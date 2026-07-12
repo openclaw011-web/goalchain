@@ -83,7 +83,8 @@ describe('KeeperService', () => {
       'onchain-market-1',
       0, // home_win
       { root: proof.merkleRoot, proof: proof.proof, leaf: proof.leaf },
-      undefined,
+      undefined, // proofAccount
+      undefined, // validateStatArgs — real oracle proof material when available
     );
     expect(keeper.getStatus().settled).toBe(1);
   });

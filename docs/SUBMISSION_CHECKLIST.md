@@ -78,24 +78,26 @@ anchor deploy --program-name prediction_market --provider.cluster devnet
 # Copy program ID from output → update frontend/lib/solana.ts and backend/.env
 ```
 
-### Backend (Railway)
+### Backend (Render — one click)
+Render dashboard → **New → Blueprint** → select this repo. `render.yaml`
+preconfigures the service; you are prompted only for the secrets
+(`TXLINE_JWT`, `TXLINE_API_TOKEN`, `SOLANA_KEEPER_PRIVATE_KEY` — values in
+the local gitignored `backend/.env` / `.env.txline`).
+
+### Backend (Railway alternative)
 ```bash
 cd backend
-railway init
-railway up
-# Set env vars in Railway dashboard:
-# TXLINE_API_URL, TXLINE_API_TOKEN, TXLINE_JWT
-# SOLANA_RPC, PROGRAM_ID, KEEPER_KEYPAIR_BASE64
+railway init && railway up
+# Set the same env vars as render.yaml in the Railway dashboard
 ```
 
 ### Frontend (Vercel)
 ```bash
 cd frontend
 vercel deploy --prod
-# Set env vars:
-# NEXT_PUBLIC_API_URL=https://your-backend.railway.app
-# NEXT_PUBLIC_SOLANA_RPC=https://api.devnet.solana.com
-# NEXT_PUBLIC_PREDICTION_PROGRAM_ID=C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5
+# frontend/vercel.json presets NEXT_PUBLIC_SOLANA_RPC and
+# NEXT_PUBLIC_PREDICTION_PROGRAM_ID; set only:
+# NEXT_PUBLIC_API_URL=https://<your-backend>.onrender.com/api
 ```
 
 ## Pre-Submission Final Check

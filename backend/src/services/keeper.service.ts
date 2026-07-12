@@ -45,6 +45,12 @@ export interface KeeperProofSource {
     leaf: string;
     /** On-chain account holding the proof, when TxLINE anchors it. */
     proofAccount?: string;
+    /**
+     * Full validate_stat args when the proof source can supply real
+     * txoracle proof material — forwarded to settle_market as
+     * borsh-serialized proof_data.
+     */
+    validateStatArgs?: import('./txoracle.js').ValidateStatArgs;
   } | null>;
 }
 
@@ -183,6 +189,7 @@ export class KeeperService {
       outcomeIndex,
       { root: proof.merkleRoot, proof: proof.proof, leaf: proof.leaf },
       proof.proofAccount,
+      proof.validateStatArgs,
     );
 
     if (result) {

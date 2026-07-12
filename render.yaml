@@ -1,0 +1,27 @@
+# Render Blueprint — one-click backend deploy.
+# In Render: New → Blueprint → point at this repo. Values marked
+# sync: false are prompted for in the dashboard (TxLINE credentials live
+# in backend/.env.txline locally — never commit them).
+services:
+  - type: web
+    name: goalchain-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SOLANA_RPC_URL
+        value: https://api.devnet.solana.com
+      - key: SOLANA_PROGRAM_ID
+        value: C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5
+      - key: MARKET_CREATION_LOOKAHEAD
+        value: "604800000"
+      - key: TXLINE_JWT
+        sync: false
+      - key: TXLINE_API_TOKEN
+        sync: false
+      - key: SOLANA_KEEPER_PRIVATE_KEY
+        sync: false

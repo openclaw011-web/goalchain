@@ -236,6 +236,12 @@ export class SolanaService {
     merkleProof: { root: string; proof: string[]; leaf: string },
     /** On-chain TxLINE proof account holding the Merkle proof to consume. */
     proofAccount?: string,
+    /**
+     * Full validate_stat arguments for the REAL txoracle program. When
+     * provided, proof_data is the borsh serialization of these args;
+     * otherwise the demo/mock 33-byte encoding is used.
+     */
+    validateStatArgs?: import('./txoracle.js').ValidateStatArgs,
   ): Promise<{ signature: string } | null> {
     if (this.options.mockMode) {
       // Update mock state
@@ -272,15 +278,18 @@ export class SolanaService {
 
       // settle_market forwards proof_data verbatim after the validate_stat
       // discriminator, so the payload is assembled entirely off-chain here.
-      // Current encoding: match-id hash (32 bytes, from the proof bundle's
-      // Merkle root) ++ outcome (1 byte). To settle against the real
-      // txoracle, borsh-serialize its validate_stat args instead
-      // (ts, fixture_summary, fixture_proof, main_tree_proof, predicate,
-      // stat_a, stat_b, op — see scripts/idl/txoracle.json); no program
-      // change is needed.
-      const matchIdBytes = Buffer.alloc(32);
-      Buffer.from(merkleProof.root.replace(/^0x/, ''), 'hex').copy(matchIdBytes);
-      const proofData = Buffer.concat([matchIdBytes, Buffer.from([outcome])]);
+      // Real oracle: borsh-serialized validate_stat args (via the txoracle
+      // IDL). Demo/mock fallback: match-id hash (32 bytes, from the proof
+      // bundle's Merkle root) ++ outcome (1 byte).
+      let proofData: Buffer;
+      if (validateStatArgs) {
+        const { buildValidateStatProofData } = await import('./txoracle.js');
+        proofData = await buildValidateStatProofData(validateStatArgs);
+      } else {
+        const matchIdBytes = Buffer.alloc(32);
+        Buffer.from(merkleProof.root.replace(/^0x/, ''), 'hex').copy(matchIdBytes);
+        proofData = Buffer.concat([matchIdBytes, Buffer.from([outcome])]);
+      }
 
       const signature = await (this.program.methods as Record<string, any>)
         .settleMarket(outcome, proofData)
