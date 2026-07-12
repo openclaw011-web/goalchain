@@ -95,17 +95,21 @@ vercel deploy --prod
 # Set env vars:
 # NEXT_PUBLIC_API_URL=https://your-backend.railway.app
 # NEXT_PUBLIC_SOLANA_RPC=https://api.devnet.solana.com
-# NEXT_PUBLIC_PROGRAM_ID=<your deployed program ID>
+# NEXT_PUBLIC_PREDICTION_PROGRAM_ID=C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5
 ```
 
 ## Pre-Submission Final Check
 
-- [ ] `npm run build` passes in frontend with 0 errors
-- [ ] Backend tests pass: `cd backend && npm test`
-- [ ] Contract compiles: `anchor build`
+- [x] `npm run build` passes in frontend with 0 errors
+- [x] Backend tests pass: `cd backend && npm test` (79/79)
+- [x] Contract compiles: `anchor build` (+ IDL generated)
+- [x] Contract test suite passes: `anchor test --skip-build --provider.cluster localnet` (25/25)
+- [x] Config + 6 demo markets live on Devnet (`scripts/bootstrap-devnet-markets.mjs`)
+- [x] Real on-chain bet verified end-to-end (`scripts/smoke-test-bet.mjs` — 0.01 SOL into escrow)
+- [ ] Program upgrade with claim/refund fix deployed (needs ~2.1 SOL Devnet for buffer rent; run `anchor deploy --provider.cluster devnet` once the faucet allows)
 - [ ] Live site URL responds with 200
 - [ ] Wallet connect works on deployed site
-- [ ] TxLINE scores visible in deployed frontend
+- [ ] TxLINE scores visible in deployed frontend (needs real TXLINE_JWT/TXLINE_API_TOKEN)
 - [ ] Demo video is unlisted on YouTube with good audio
 - [ ] GitHub repo is public
 - [ ] Submission form filled out on Superteam Earn

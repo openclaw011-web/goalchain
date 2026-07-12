@@ -13,7 +13,7 @@ GoalChain is a three-layer system:
 ## Solana Program Design
 
 ### Program ID (Devnet)
-Deployed at: `GoaLcHaiN...` (set after anchor deploy)
+Deployed at: `C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5`
 
 ### Account Model
 
@@ -38,7 +38,7 @@ Market (PDA: ["market", match_id_bytes])
   - fee_collected: u64
   - bump: u8
 
-Bet (PDA: ["bet", market, bettor])
+Bet (PDA: ["bet", market, bettor, outcome_index])
   - market: Pubkey
   - bettor: Pubkey
   - outcome: u8

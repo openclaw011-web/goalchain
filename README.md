@@ -30,7 +30,7 @@ GoalChain is a **fully trustless, on-chain prediction market** for the 2026 FIFA
 │                    GoalChain                        │
 ├──────────┬──────────────┬───────────────────────────┤
 │ Frontend │   Backend    │    Solana Program          │
-│ Next.js  │  Node/TS     │    (Anchor 0.30)           │
+│ Next.js  │  Node/TS     │    (Anchor 0.31)           │
 │ Vercel   │  Railway     │    Devnet                  │
 └──────────┴──┬───────────┴────────────┬──────────────┘
               │                        │
@@ -46,7 +46,7 @@ GoalChain is a **fully trustless, on-chain prediction market** for the 2026 FIFA
 
 | Layer | Tech | Purpose |
 |---|---|---|
-| **Smart Contract** | Rust + Anchor 0.30 | Market creation, escrow, settlement, payout |
+| **Smart Contract** | Rust + Anchor 0.31 | Market creation, escrow, settlement, payout |
 | **Backend** | Node.js + TypeScript | TxLINE SSE ingestion, WebSocket relay, keeper bot |
 | **Frontend** | Next.js 14 + Tailwind | User interface, wallet connect, bet placement |
 | **Oracle** | TxLINE (TxODDS) | Cryptographically verified match data |
@@ -105,7 +105,7 @@ txline_sdk::cpi::validate_stat(cpi_ctx, proof_data)?;
 - Node.js 20+
 - Rust + Cargo
 - Solana CLI
-- Anchor 0.30.x
+- Anchor 0.31.x
 - A Solana wallet (Phantom/Backpack)
 
 ### 1. Clone & Install
@@ -139,6 +139,21 @@ cp frontend/.env.example frontend/.env.local
 cd contracts/prediction-market
 anchor build
 anchor deploy --provider.cluster devnet
+```
+
+> Already deployed at [`C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5`](https://explorer.solana.com/address/C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5?cluster=devnet) — skip this step unless you fork the program.
+
+### 3b. Bootstrap Demo Markets (Devnet)
+```bash
+cd scripts && npm install
+node bootstrap-devnet-markets.mjs   # idempotent: initializes config + creates demo markets
+node smoke-test-bet.mjs             # optional: places a real 0.01 SOL bet to verify the flow
+```
+
+### 3c. Run the On-Chain Test Suite (25 tests, local validator)
+```bash
+cd contracts/prediction-market
+anchor test --skip-build --provider.cluster localnet
 ```
 
 ### 4. Run Backend

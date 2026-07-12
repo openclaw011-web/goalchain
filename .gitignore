@@ -7,3 +7,6 @@ target/
 *.log
 tmp/
 /tmp/
+.anchor/
+test-ledger/
+data/
