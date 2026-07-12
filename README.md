@@ -28,7 +28,11 @@ GoalChain is a **fully trustless, on-chain prediction market** for the 2026 FIFA
 | Program | [`C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5`](https://explorer.solana.com/address/C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5?cluster=devnet) |
 | Live demo market (ARG vs BRA, id 101) | [`5SuVuPFq7pet5WnNhiAESfRyERcfaFmVnjvkjKjiHiua`](https://explorer.solana.com/address/5SuVuPFq7pet5WnNhiAESfRyERcfaFmVnjvkjKjiHiua?cluster=devnet) |
 | Real bet into escrow (0.01 SOL) | [transaction](https://explorer.solana.com/tx/2PVPRzPMtxs2Z31er4mj96s211NzHrvUpdhipPWRv2UHfbkrWWrkcd5sa6RntEFcFY9ModVZMc7g3NtG8a9V5t4K?cluster=devnet) |
-| Test suites | 25/25 on-chain lifecycle tests (incl. settle-via-CPI → claim payouts) · 88/88 backend · frontend builds clean |
+| **Live TxLINE fixture market** (France–Spain, auto-created from the real feed) | [`CqFHm4vQRpwdkFjDoZ2edFNsLcwvaknsrxFdaQzd7L4f`](https://explorer.solana.com/address/CqFHm4vQRpwdkFjDoZ2edFNsLcwvaknsrxFdaQzd7L4f?cluster=devnet) |
+| Real bet on the live fixture market | [transaction](https://explorer.solana.com/tx/4R1iD7VbHrcbefLbgLpQ8googgzXV1rQTjxgdVrhB7CbLv5gtZfZoinZy58CZz1ywPs1NxiCCF2fVoBY7ok594b6?cluster=devnet) |
+| Real on-chain TxLINE subscription | [transaction](https://explorer.solana.com/tx/2aBG9VWZg7AriJyhDA8zY2JnBqybhzFeJcjVqoEFnyos2s9EaH7UWCoMPKdpeP3WiZTLgvWZc3TibV7UEBLLToZi?cluster=devnet) |
+| PDA payout verified on the deployed binary (`refund_bet`, `scripts/verify-payout-devnet.mjs`) | [transaction](https://explorer.solana.com/tx/4QK3B1dYhnXrW37Mvn1JcSi2p21t3dgvPRQQbZXz6Y56yqQKAQ5wCUh4wZ4pZd6FucdtKmE9H7aXdLx4oK6fJaSM?cluster=devnet) |
+| Test suites | 26/26 on-chain lifecycle tests (incl. settle-via-CPI → claim payouts) · 88/88 backend · frontend builds clean |
 
 ---
 
@@ -120,7 +124,7 @@ invoke(&Instruction { program_id: TXLINE_DEVNET, accounts, data: instruction_dat
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/yourusername/goalchain
+git clone https://github.com/openclaw011-web/goalchain
 cd goalchain
 
 # Backend

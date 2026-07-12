@@ -11,14 +11,10 @@
 - [ ] Upload to YouTube (unlisted) or Loom
 
 ### 2. Public Repo ✅
-- [ ] Push to GitHub — from the repo root:
-  ```bash
-  gh auth login                       # once (or: git remote add origin git@github.com:YOU/goalchain.git)
-  gh repo create goalchain --public --source=. --push
-  ```
+- [x] Pushed to GitHub: **https://github.com/openclaw011-web/goalchain** (public, default branch `main`, CI running)
 - [x] README.md is clear and comprehensive ✅
-- [x] All code committed (clean tree on `master`)
-- [x] No secret keys in repo (.env.example only; frontend .env.local holds only public values and is gitignored)
+- [x] All code committed (clean tree on `main`)
+- [x] No secret keys in repo (.env.example only; real TxLINE creds in gitignored backend/.env*)
 
 ### 3. Application Access ✅
 - [ ] Deploy frontend to Vercel: `npx vercel --prod`
@@ -41,14 +37,14 @@ Copy this into the Superteam submission form:
 - Real-time score ticker and odds updates via TxLINE SSE stream
 - ProofVerifier page shows full Merkle proof trail for every settled market
 
-**TxLINE Endpoints Used:**
-- `POST /auth/guest/start` — authentication
-- `GET /api/fixtures` — World Cup schedule
-- `GET /api/scores/soccer/snapshot` — current scores
-- `GET /api/scores/soccer/stream` (SSE) — real-time score events
+**TxLINE Endpoints Used (verified against the live Devnet API with a real subscription):**
+- `POST /auth/guest/start` — guest JWT
+- On-chain `subscribe(service_level, weeks)` + `POST /api/token/activate` — real subscription (see `scripts/txline-subscribe.mjs`)
+- `GET /api/fixtures/snapshot` — World Cup schedule (CompetitionId 72)
+- `GET /api/scores/snapshot[/:fixtureId]` — current scores
+- `GET /api/scores/stream` (SSE) — real-time score events
 - `GET /api/odds/stream` (SSE) — live odds updates
-- `GET /api/scores/soccer/proof/:matchId` — Merkle proof for settlement
-- On-chain: `validate_stat` CPI (Devnet: `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`)
+- On-chain: `validate_stat` CPI (Devnet: `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`) — `settle_market` forwards keeper-built proof bytes verbatim
 
 **Network:** Solana Devnet for contract; TxLINE Devnet/Mainnet free tier
 
@@ -107,13 +103,14 @@ vercel deploy --prod
 - [x] `npm run build` passes in frontend with 0 errors
 - [x] Backend tests pass: `cd backend && npm test` (88/88 incl. keeper bot)
 - [x] Contract compiles: `anchor build` (+ IDL generated)
-- [x] Contract test suite passes: `anchor test --skip-build --provider.cluster localnet` (25/25)
+- [x] Contract test suite passes: `anchor test --skip-build --provider.cluster localnet` (26/26)
 - [x] Config + 6 demo markets live on Devnet (`scripts/bootstrap-devnet-markets.mjs`)
 - [x] Real on-chain bet verified end-to-end (`scripts/smoke-test-bet.mjs` — 0.01 SOL into escrow)
-- [ ] Program upgrade with claim/refund fix deployed — run `./deploy-upgrade.sh` (handles airdrop check, build, upgrade, IDL re-vendor; needs ~2.2 SOL Devnet, buffer rent is refunded)
-- [ ] Live site URL responds with 200
+- [x] Program upgrade deployed (claim/refund payout fix + settle_market proof pass-through) — tx `4HxXjqybbuaonvacMv156XMCW2B7DbNMi6KUNmRQd5XqM2AC3STaAM7oqmtDELz7Cnmq48TtDsxyQ7D3z99tBDqs`
+- [x] PDA payout verified on the deployed binary (`scripts/verify-payout-devnet.mjs` — refund_bet moved 0.01 SOL out of escrow)
+- [x] GitHub repo is public: https://github.com/openclaw011-web/goalchain
+- [ ] Live site URL responds with 200 (Vercel + Railway deploys — needs your accounts)
 - [ ] Wallet connect works on deployed site
-- [ ] TxLINE scores visible in deployed frontend (needs real TXLINE_JWT/TXLINE_API_TOKEN)
+- [ ] TxLINE scores visible in deployed frontend (paste TXLINE_JWT/TXLINE_API_TOKEN from backend/.env.txline into the host's dashboard)
 - [ ] Demo video is unlisted on YouTube with good audio
-- [ ] GitHub repo is public
 - [ ] Submission form filled out on Superteam Earn
