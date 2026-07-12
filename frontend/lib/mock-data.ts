@@ -151,6 +151,9 @@ export const markets: Market[] = matches.map((match, idx) => {
   return {
     id: `market-${match.id}`,
     matchId: match.id,
+    // On-chain ids 101..110 — created on Devnet by scripts/bootstrap-devnet-markets.mjs.
+    // Only upcoming markets exist on-chain (past lock times cannot be created).
+    onchainMarketId: status === 'upcoming' ? 101 + idx : undefined,
     type: 'match_winner',
     title: `${match.homeTeam.shortName} vs ${match.awayTeam.shortName} - Match Winner`,
     status,

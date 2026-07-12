@@ -12,7 +12,8 @@ interface BetFormProps {
 }
 
 export default function BetForm({ market, onBetPlaced }: BetFormProps) {
-  const { publicKey, connected } = useWallet();
+  const wallet = useWallet();
+  const { publicKey, connected } = wallet;
   const [selectedOutcome, setSelectedOutcome] = useState<string | null>(null);
   const [amount, setAmount] = useState<string>('10');
   const [step, setStep] = useState<'select' | 'confirm' | 'signing' | 'success' | 'error'>('select');
@@ -38,10 +39,18 @@ export default function BetForm({ market, onBetPlaced }: BetFormProps) {
     setErrorMessage('');
 
     try {
+      if (market.onchainMarketId === undefined) {
+        throw new Error(
+          'This market has not been created on-chain yet — betting is disabled.',
+        );
+      }
+      const outcomeIndex = market.outcomes.findIndex((o) => o.id === selectedOutcome);
+      if (outcomeIndex < 0) throw new Error('Invalid outcome selection');
+
       const result = await solanaClient.placeBet(
-        useWallet(),
-        market.id,
-        selectedOutcome,
+        wallet,
+        market.onchainMarketId,
+        outcomeIndex,
         parseFloat(amount),
       );
 
@@ -50,7 +59,7 @@ export default function BetForm({ market, onBetPlaced }: BetFormProps) {
         setStep('success');
         onBetPlaced?.(result.signature);
       } else {
-        throw new Error('Transaction failed');
+        throw new Error(result.error || 'Transaction failed');
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to place bet');
@@ -154,7 +163,7 @@ export default function BetForm({ market, onBetPlaced }: BetFormProps) {
                         : 'border-goalchain-border text-goalchain-text-muted hover:border-goalchain-border-light'
                     }`}
                   >
-                    ${a}
+                    {a} SOL
                   </button>
                 ))}
               </div>
@@ -182,7 +191,7 @@ export default function BetForm({ market, onBetPlaced }: BetFormProps) {
                 <div className="border-t border-goalchain-border pt-2 mt-2 flex items-center justify-between">
                   <span className="text-sm font-semibold">Potential Payout</span>
                   <span className="text-lg font-bold font-mono text-goalchain-green">
-                    ${potentialPayout}
+                    {potentialPayout} SOL
                   </span>
                 </div>
               </motion.div>
@@ -232,7 +241,7 @@ export default function BetForm({ market, onBetPlaced }: BetFormProps) {
                 </div>
                 <div className="border-t border-goalchain-border pt-3 flex justify-between">
                   <span className="font-semibold">Payout if Win</span>
-                  <span className="text-lg font-bold font-mono text-goalchain-green">${potentialPayout}</span>
+                  <span className="text-lg font-bold font-mono text-goalchain-green">{potentialPayout} SOL</span>
                 </div>
               </div>
             </div>
@@ -296,6 +305,19 @@ export default function BetForm({ market, onBetPlaced }: BetFormProps) {
               <div className="p-3 rounded-lg bg-goalchain-navy-light border border-goalchain-border mb-4 text-left">
                 <div className="text-xs text-goalchain-text-muted mb-1">Transaction Signature</div>
                 <code className="text-xs font-mono text-goalchain-green break-all">{txSignature}</code>
+                <a
+                  href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 text-xs text-goalchain-green hover:underline"
+                >
+                  View on Solana Explorer
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
               </div>
             )}
             <div className="flex gap-3">

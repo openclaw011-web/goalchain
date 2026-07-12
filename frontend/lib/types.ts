@@ -23,6 +23,13 @@ export interface Market {
   oddsHistory: OddsPoint[];
   match: Match;
   volume: number;
+  /**
+   * Numeric id of the corresponding on-chain market account.
+   * Market PDA = ["market", u64-LE(onchainMarketId)] on the
+   * prediction-market program. Undefined if the market has not been
+   * created on-chain (betting is then disabled).
+   */
+  onchainMarketId?: number;
 }
 
 export interface Outcome {
