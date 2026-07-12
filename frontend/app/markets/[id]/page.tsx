@@ -75,7 +75,7 @@ export default function MarketDetailPage({ params }: { params: { id: string } })
 
   const poolDist = poolDistributions[market.matchId] || market.outcomes.map((o, i) => ({
     outcome: o.label,
-    percentage: (o.volume / market.poolSize) * 100,
+    percentage: market.poolSize > 0 ? (o.volume / market.poolSize) * 100 : 0,
     amount: o.volume,
     color: i === 0 ? '#00ff88' : i === 1 ? '#f59e0b' : '#3b82f6',
   }));

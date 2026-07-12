@@ -141,7 +141,7 @@ class ApiClient {
         const total = market.poolSize;
         const dist = market.outcomes.map(o => ({
           outcome: o.label,
-          percentage: (o.volume / total) * 100,
+          percentage: total > 0 ? (o.volume / total) * 100 : 0,
           amount: o.volume,
           color: o.id.includes('home') ? '#00ff88' : o.id.includes('draw') ? '#f59e0b' : '#3b82f6',
         }));
