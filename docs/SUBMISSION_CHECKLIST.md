@@ -11,10 +11,14 @@
 - [ ] Upload to YouTube (unlisted) or Loom
 
 ### 2. Public Repo ✅
-- [ ] Push to GitHub: `https://github.com/YOUR_USERNAME/goalchain`
-- [ ] README.md is clear and comprehensive ✅
-- [ ] All code committed
-- [ ] No secret keys in repo (.env.example only)
+- [ ] Push to GitHub — from the repo root:
+  ```bash
+  gh auth login                       # once (or: git remote add origin git@github.com:YOU/goalchain.git)
+  gh repo create goalchain --public --source=. --push
+  ```
+- [x] README.md is clear and comprehensive ✅
+- [x] All code committed (clean tree on `master`)
+- [x] No secret keys in repo (.env.example only; frontend .env.local holds only public values and is gitignored)
 
 ### 3. Application Access ✅
 - [ ] Deploy frontend to Vercel: `npx vercel --prod`
@@ -106,7 +110,7 @@ vercel deploy --prod
 - [x] Contract test suite passes: `anchor test --skip-build --provider.cluster localnet` (25/25)
 - [x] Config + 6 demo markets live on Devnet (`scripts/bootstrap-devnet-markets.mjs`)
 - [x] Real on-chain bet verified end-to-end (`scripts/smoke-test-bet.mjs` — 0.01 SOL into escrow)
-- [ ] Program upgrade with claim/refund fix deployed (needs ~2.1 SOL Devnet for buffer rent; run `anchor deploy --program-name prediction_market --provider.cluster devnet` once the faucet allows)
+- [ ] Program upgrade with claim/refund fix deployed — run `./deploy-upgrade.sh` (handles airdrop check, build, upgrade, IDL re-vendor; needs ~2.2 SOL Devnet, buffer rent is refunded)
 - [ ] Live site URL responds with 200
 - [ ] Wallet connect works on deployed site
 - [ ] TxLINE scores visible in deployed frontend (needs real TXLINE_JWT/TXLINE_API_TOKEN)
