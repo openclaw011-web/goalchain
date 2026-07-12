@@ -7,6 +7,7 @@ import LiveTicker from '@/components/LiveTicker';
 import MatchScore from '@/components/MatchScore';
 import OddsChart from '@/components/OddsChart';
 import BetForm from '@/components/BetForm';
+import ClaimPanel from '@/components/ClaimPanel';
 import PoolDistributionComponent from '@/components/PoolDistribution';
 import { MatchScoreSkeleton, OddsChartSkeleton } from '@/components/Skeletons';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -172,7 +173,8 @@ export default function MarketDetailPage({ params }: { params: { id: string } })
 
             {/* Right Side - Bet Form */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24">
+              <div className="sticky top-24 space-y-6">
+                {connected && <ClaimPanel market={market} />}
                 {market.status !== 'settled' && connected ? (
                   <BetForm market={market} />
                 ) : (

@@ -7,6 +7,30 @@
 - Use a real Phantom wallet connected to Devnet
 - Have a World Cup match in progress (or use historical replay)
 
+## Pre-Flight (run before recording)
+
+```bash
+# 1. Everything running locally
+./deploy-local.sh                     # backend :3001 + frontend :3000
+
+# 2. Demo markets already live on Devnet (idempotent — safe to re-run)
+cd scripts && node bootstrap-devnet-markets.mjs
+
+# 3. Devnet SOL in your Phantom wallet (faucet.solana.com)
+```
+
+**Concrete assets to show (all real, already on Devnet):**
+- Program: `C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5`
+  https://explorer.solana.com/address/C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5?cluster=devnet
+- Demo market to click: **ARG vs BRA** (`/markets/market-match-1`, on-chain id 101,
+  market PDA `5SuVuPFq7pet5WnNhiAESfRyERcfaFmVnjvkjKjiHiua`)
+- Backup real bet tx (if the live demo hiccups):
+  https://explorer.solana.com/tx/2PVPRzPMtxs2Z31er4mj96s211NzHrvUpdhipPWRv2UHfbkrWWrkcd5sa6RntEFcFY9ModVZMc7g3NtG8a9V5t4K?cluster=devnet
+- For the settlement/claim segment, show the test suite proving the full
+  lifecycle against the TxLINE CPI interface (25 tests incl. Create → Bet →
+  Lock → Settle-via-CPI → Claim with verified payouts):
+  `cd contracts/prediction-market && anchor test --skip-build --provider.cluster localnet`
+
 ---
 
 ## [0:00 – 0:30] Hook — The Problem
@@ -34,10 +58,9 @@
 > These odds update in real time — directly from TxLINE's cryptographically signed consensus feed."
 
 **DEMO:**
-1. Click into "Argentina vs France" market
-2. Show the live score updating (WebSocket connection)
-3. Show the odds movement chart changing as new events arrive
-4. Connect Phantom wallet (already on Devnet)
+1. Click into the "Argentina vs Brazil" market (`/markets/market-match-1` — a REAL Devnet market, id 101)
+2. Show the live score ticker and odds movement chart
+3. Connect Phantom wallet (already on Devnet)
 
 **NARRATE:**
 > "I'll connect my Phantom wallet on Solana Devnet."
@@ -47,13 +70,13 @@
 ## [1:30 – 2:30] Placing a Bet — On-Chain Transaction
 
 **DEMO:**
-1. Select "Argentina Win" outcome (showing 2.10x odds)
-2. Enter "1 SOL" bet amount
-3. Show potential payout: 2.10 SOL
-4. Click "Place Bet"
-5. Phantom wallet opens — show the transaction details
-6. Approve — show transaction confirmation + Solana Explorer link
-7. Show bet appearing in "My Bets" section
+1. Select "ARG" outcome
+2. Enter "1 SOL" bet amount, show the payout preview
+3. Click "Review Prediction" → "Confirm & Sign"
+4. Phantom opens — show the REAL place_bet transaction (program C5vN…EQE5)
+5. Approve — the success screen shows the tx signature with a working
+   Solana Explorer link; open it and show the escrow transfer
+6. Point at the market PDA balance increasing on Explorer
 
 **NARRATE:**
 > "I'm betting 1 SOL on Argentina to win. This SOL goes directly into a PDA escrow account
@@ -115,7 +138,7 @@ txline_cpi::validate_stat(cpi_ctx, proof_data)?;
 
 ## [4:00 – 4:30] Proof Verifier
 
-**SHOW:** Navigate to /verify/match_2026_arg_fra_0712
+**SHOW:** Navigate to /verify/match-7 (settled CRO vs MEX match)
 
 **NARRATE:**
 > "This is the Proof Verifier page — one of our unique features.

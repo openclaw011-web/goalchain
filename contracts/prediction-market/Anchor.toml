@@ -22,3 +22,10 @@ test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 
 [test]
 startup_wait = 60000
+
+# Load the TxLINE mock AT THE REAL TxLINE PROGRAM ID on the test validator,
+# so settle_market's CPI (and the claim/payout paths behind it) run against
+# an oracle without any change to the production program.
+[[test.genesis]]
+address = "6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J"
+program = "target/deploy/txline_mock.so"

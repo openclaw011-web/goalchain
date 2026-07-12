@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "subscribe-devnet": "ts-node scripts/subscribe-devnet.ts",
-    "keeper": "ts-node backend/src/services/keeper.service.ts"
+    "subscribe-devnet": "ts-node subscribe-devnet.ts",
+    "bootstrap-markets": "node bootstrap-devnet-markets.mjs",
+    "smoke-bet": "node smoke-test-bet.mjs"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",

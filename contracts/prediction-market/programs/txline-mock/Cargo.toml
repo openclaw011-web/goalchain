@@ -1,0 +1,15 @@
+[package]
+name = "txline-mock"
+version = "0.1.0"
+description = "Localnet mock of the TxLINE oracle's validate_stat instruction — deployed at the real TxLINE program id via [[test.genesis]] so the full settle→claim lifecycle is testable"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "txline_mock"
+
+[features]
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "0.31.1" }

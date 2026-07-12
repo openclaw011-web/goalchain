@@ -603,7 +603,7 @@ describe("prediction-market", () => {
         assert.fail("Settlement must not succeed without a valid TxLINE proof");
       } catch (err: any) {
         expect(err.message).to.match(
-          /TxLineCpiFailed|AccountNotExecutable|ConstraintExecutable|invalid program|does not exist|custom program error/i
+          /TxLineCpiFailed|AccountNotExecutable|ConstraintExecutable|invalid program|does not exist|custom program error|InvalidProof/i
         );
       }
 
@@ -939,24 +939,27 @@ describe("prediction-market", () => {
   //  Test: Full lifecycle (happy path)
   // ══════════════════════════════════════════════════════════════════
   describe("full lifecycle", () => {
-    it("Create → Place bets → Lock → Settle → Claim (multi-user)", async () => {
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    it("Create → Place bets → Lock → Settle (TxLINE CPI) → Claim (multi-user)", async () => {
       const lifeId = new BN(60);
       const [lifePda] = findMarketPda(lifeId);
 
-      // Step 1: Create
+      // Step 1: Create — shortest valid window so settlement is reachable.
+      const t0 = Math.floor(Date.now() / 1000);
       await program.methods
         .createMarket(
           lifeId,
           "LIFECYCLE-TEST",
           { matchWinner: {} },
           ["Green", "Red", "Draw"],
-          new BN(now + 1_000_000),
-          new BN(now + 2_000_000)
+          new BN(t0 + 8),
+          new BN(t0 + 9)
         )
         .accounts({ market: lifePda, config: configPda, admin: wallet.publicKey })
         .rpc();
 
-      // Step 2: Place bets
+      // Step 2: Place bets (before lock_time)
       const users = await Promise.all([
         newFundedKeypair(),
         newFundedKeypair(),
@@ -995,10 +998,88 @@ describe("prediction-market", () => {
       const marketLocked = await program.account.market.fetch(lifePda);
       expect(marketLocked.status).to.deep.equal({ locked: {} });
 
-      // Step 4: Settle — cannot test without TxLINE on localnet
-      // We verify the market is in a state where settlement is the
-      // next valid transition.
-      // Step 5: Claim — requires settlement
+      // Step 4: Settle via the TxLINE validate_stat CPI.
+      // [[test.genesis]] loads the txline-mock binary at the real TxLINE
+      // program id; it accepts any proof account that exists and carries
+      // data (we use our config PDA as the stand-in proof).
+      await sleep(10_000); // let resolve_time pass
+
+      const WINNING_OUTCOME = 0; // "Green" — users[0] wins
+      await program.methods
+        .settleMarket(WINNING_OUTCOME, [...Buffer.alloc(32, 7)])
+        .accounts({
+          market: lifePda,
+          config: configPda,
+          admin: wallet.publicKey,
+          txlineProgram: TXLINE_PROGRAM_ID,
+          txlineState: PublicKey.findProgramAddressSync(
+            [Buffer.from("state")],
+            TXLINE_PROGRAM_ID
+          )[0],
+          txlineProofAccount: configPda, // exists + has data → mock accepts
+        })
+        .rpc();
+
+      const settled = await program.account.market.fetch(lifePda);
+      expect(settled.status).to.deep.equal({ settled: {} });
+      expect(settled.winningOutcome).to.equal(WINNING_OUTCOME);
+
+      // Step 5: Claim — winner takes the whole pool proportionally.
+      // payout = bet × total / winning_pool = 2 × 6 / 2 = 6 SOL.
+      const [winnerBetPda] = findBetPda(lifePda, users[0].publicKey, 0);
+      const balBefore = await provider.connection.getBalance(users[0].publicKey);
+
+      await program.methods
+        .claimWinnings()
+        .accounts({
+          market: lifePda,
+          bet: winnerBetPda,
+          winner: users[0].publicKey,
+        })
+        .signers([users[0]])
+        .rpc();
+
+      const balAfter = await provider.connection.getBalance(users[0].publicKey);
+      const received = balAfter - balBefore;
+      // 6 SOL minus the claim transaction fee (~5k lamports)
+      expect(received).to.be.greaterThan(5.99 * LAMPORTS_PER_SOL);
+      expect(received).to.be.at.most(6 * LAMPORTS_PER_SOL);
+
+      const claimedBet = await program.account.bet.fetch(winnerBetPda);
+      expect(claimedBet.claimed).to.be.true;
+
+      // Double-claim must be rejected.
+      try {
+        await program.methods
+          .claimWinnings()
+          .accounts({
+            market: lifePda,
+            bet: winnerBetPda,
+            winner: users[0].publicKey,
+          })
+          .signers([users[0]])
+          .rpc();
+        assert.fail("Double claim must be rejected");
+      } catch (err: any) {
+        expect(err.message).to.include("BetAlreadyClaimed");
+      }
+
+      // A losing bettor must not be able to claim.
+      const [loserBetPda] = findBetPda(lifePda, users[1].publicKey, 1);
+      try {
+        await program.methods
+          .claimWinnings()
+          .accounts({
+            market: lifePda,
+            bet: loserBetPda,
+            winner: users[1].publicKey,
+          })
+          .signers([users[1]])
+          .rpc();
+        assert.fail("Losing bet must not be claimable");
+      } catch (err: any) {
+        expect(err.message).to.include("NotWinningBet");
+      }
     });
   });
 });

@@ -26,6 +26,7 @@ import { initDatabase, createDbBridge } from './db/schema.js';
 import { TxlineService } from './services/txline.service.js';
 import { MarketService } from './services/market.service.js';
 import { SolanaService } from './services/solana.service.js';
+import { KeeperService } from './services/keeper.service.js';
 import { createMarketsRouter } from './routes/markets.js';
 import { createFixturesRouter } from './routes/fixtures.js';
 import { createLiveRouter } from './routes/live.js';
@@ -51,6 +52,10 @@ async function main(): Promise<void> {
 
   const marketService = new MarketService(db);
   const solanaService = new SolanaService();
+
+  // Keeper bot: pushes DB settlements on-chain via the TxLINE proof CPI.
+  const keeperService = new KeeperService(marketService, txlineService, solanaService);
+  keeperService.start();
 
   // Connect TxLINE events → Market service
   txlineService.on('event:match_start', (event) => marketService.processTxlineEvent(event));
@@ -87,6 +92,7 @@ async function main(): Promise<void> {
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
       txline: txlineService.getStatus(),
+      keeper: keeperService.getStatus(),
     });
   });
 
