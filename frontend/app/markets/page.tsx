@@ -39,6 +39,10 @@ export default function MarketsPage() {
     queryKey: ['markets'],
     queryFn: () => apiClient.getMarkets(),
     initialData: storeMarkets,
+    // Seed renders instantly, but mark it stale (updatedAt 0) so the query
+    // refetches real data on mount — otherwise staleTime keeps the seed and
+    // the API is never called.
+    initialDataUpdatedAt: 0,
   });
 
   const filteredMarkets = useMemo(() => {

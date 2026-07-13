@@ -26,6 +26,7 @@ export default function MarketDetailPage({ params }: { params: { id: string } })
     queryKey: ['market', marketId],
     queryFn: () => apiClient.getMarket(marketId),
     initialData: getMarketById(marketId),
+    initialDataUpdatedAt: 0, // refetch real data on mount; see markets/page.tsx
   });
 
   if (isLoading && !market) {

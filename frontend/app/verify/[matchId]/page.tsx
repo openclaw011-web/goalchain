@@ -21,6 +21,7 @@ export default function VerifyPage({ params }: { params: { matchId: string } }) 
     queryKey: ['proof', matchId],
     queryFn: () => apiClient.getMerkleProof(matchId),
     initialData: merkleProofs[matchId],
+    initialDataUpdatedAt: 0, // refetch real data on mount; see markets/page.tsx
   });
 
   return (

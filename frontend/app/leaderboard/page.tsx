@@ -41,6 +41,7 @@ export default function LeaderboardPage() {
     queryKey: ['leaderboard'],
     queryFn: () => apiClient.getLeaderboard(),
     initialData: storeLeaderboard,
+    initialDataUpdatedAt: 0, // refetch real data on mount; see markets/page.tsx
   });
 
   const sortedLeaderboard = useMemo(() => {
