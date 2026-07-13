@@ -3,11 +3,19 @@
 > **TxODDS x Superteam Earn Hackathon Submission**
 > Track: Prediction Markets and Settlement | Prize Pool: $18,000 USDT
 >
-> **🌐 Live: https://goalchain-opal.vercel.app** · **Repo: https://github.com/openclaw011-web/goalchain**
+> **🌐 Live: https://goalchain-opal.vercel.app** · **🎬 Demo: https://youtu.be/pZCiOQ3Nx3k** · **Repo: https://github.com/openclaw011-web/goalchain**
 
 [![Solana](https://img.shields.io/badge/Solana-Devnet-9945FF?logo=solana)](https://devnet.solana.com)
 [![TxLINE](https://img.shields.io/badge/Powered_by-TxLINE-00ff88)](https://txline.txodds.com)
 [![License](https://img.shields.io/badge/License-MIT-blue)](./LICENSE)
+
+---
+
+## 🎬 Demo Video
+
+[![Watch the GoalChain demo](https://img.youtube.com/vi/pZCiOQ3Nx3k/maxresdefault.jpg)](https://youtu.be/pZCiOQ3Nx3k)
+
+> ▶️ **[Watch the 3-minute demo on YouTube](https://youtu.be/pZCiOQ3Nx3k)** — every frame recorded off the live product: real Devnet transactions, live TxLINE feed, and on-chain settlement.
 
 ---
 

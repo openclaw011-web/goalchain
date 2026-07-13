@@ -12,7 +12,7 @@
       Caption-only fallback (`captions.mjs`) still available if a silent-friendly cut is needed.
       (Note: the home/landing scene keeps illustrative showcase stats by design — the fresh
       Devnet deployment has $0 pools / 0 predictors.)
-- [ ] Upload to YouTube (unlisted) — title/description ready in `demo/youtube-metadata.md`
+- [x] Uploaded to YouTube: **https://youtu.be/pZCiOQ3Nx3k**
 
 ### 2. Public Repo ✅
 - [x] Pushed to GitHub: **https://github.com/openclaw011-web/goalchain** (public, default branch `main`, CI running)
@@ -134,5 +134,5 @@ vercel deploy --prod
 - [x] TxLINE fixtures visible in the deployed frontend (France–Spain, England–Argentina — real World Cup semis)
 - [ ] Wallet connect works on deployed site (manual check with Phantom/Backpack)
 - [ ] Warm the backend before judging so a cold-start visitor doesn't briefly see mock data (keep-alive ping)
-- [x] Demo video produced with voice narration (`goalchain-demo-final.mp4`, 2:56) — pending YouTube upload
+- [x] Demo video produced with voice narration (`goalchain-demo-final.mp4`, 2:56) — uploaded: https://youtu.be/pZCiOQ3Nx3k
 - [ ] Submission form filled out on Superteam Earn
