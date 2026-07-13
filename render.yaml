@@ -6,6 +6,7 @@ services:
   - type: web
     name: goalchain-api
     runtime: node
+    plan: free
     rootDir: backend
     buildCommand: npm install && npm run build
     startCommand: node dist/index.js
