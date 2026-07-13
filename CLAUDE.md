@@ -49,7 +49,8 @@ node scripts/sync-live-markets.mjs         # create on-chain markets for backend
 - `./deploy-local.sh` — builds and starts backend + frontend locally
 - `./deploy-prod.sh` — Vercel (frontend) / Render or Railway (backend) deploy helper
 - CI (`.github/workflows/ci.yml`): backend jest tests, frontend build, contract `cargo check`; deploys on push to `main`.
-- **Backend host: Render** (`render.yaml` Blueprint, pinned `plan: free` — Blueprint defaults to the paid Starter otherwise and blocks card-less accounts). Service `goalchain-api` → `https://goalchain-api.onrender.com`. The 3 `sync: false` secrets (`TXLINE_JWT`, `TXLINE_API_TOKEN`, `SOLANA_KEEPER_PRIVATE_KEY`) are entered in the dashboard; the keeper key is **base64-encoded secret-key bytes** (`solana.service.ts` does `Buffer.from(key, 'base64')`, not base58). Railway was tried first but its free trial has expired (needs a paid plan).
+- **Backend host: Render** (LIVE at `https://goalchain-api.onrender.com`). `render.yaml` Blueprint, pinned `plan: free` (Blueprint defaults to the paid Starter, which blocks card-less accounts). **Build command is `npm ci --include=dev && npm run build`** — `NODE_ENV=production` (set in render.yaml) makes plain `npm install` omit devDependencies, but the build needs typescript + `@types/*`, so tsc fails with TS7016 without `--include=dev`. The 3 `sync: false` secrets (`TXLINE_JWT`, `TXLINE_API_TOKEN`, `SOLANA_KEEPER_PRIVATE_KEY`) are entered in the dashboard; the keeper key is **base64-encoded secret-key bytes** (`solana.service.ts` does `Buffer.from(key, 'base64')`, not base58). **Render free tier cold-starts ~30s after 15min idle** — the frontend's 5s fetch timeout means a cold visitor sees mock data until it warms. Railway was tried first but its free trial has expired (needs a paid plan).
+- **Frontend env on Vercel: use project env vars, not `vercel.json` `build.env`.** `NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_WS_URL` (backend WS is at `/ws` → `wss://goalchain-api.onrender.com/ws`) are set via `vercel env add` for production/preview/development — `vercel.json` `build.env` is NOT reliably inlined for `NEXT_PUBLIC_*`. Deploy with `npx vercel deploy --prod --yes` from `frontend/`.
 
 ## Architecture
 
@@ -67,6 +68,7 @@ Three layers connected by the Solana program ID and the TxLINE oracle:
 
 3. **Frontend** (`frontend/`) — Next.js 14 App Router, Tailwind, Solana wallet-adapter, zustand + react-query.
    - `lib/api.ts` silently falls back to `lib/mock-data.ts` on **any** fetch failure (5s timeout). The UI therefore "works" with the backend down — don't mistake mock data for live data when testing.
+   - Data pages (`markets`, `markets/[id]`, `leaderboard`, `verify/[matchId]`) use `useQuery` seeded with `initialData` from the zustand store (which is seeded with `mock-data`). The QueryClient sets `staleTime:30000` + `refetchOnWindowFocus:false`, so **`initialData` must carry `initialDataUpdatedAt: 0`** or react-query treats the mock seed as fresh and NEVER refetches — the page shows mock data forever regardless of `NEXT_PUBLIC_API_URL`. The **home page (`app/page.tsx`) is intentionally mock-only** (imports `mock-data` directly for its showcase stats/featured/live-now) — it's not wired to the backend.
 
 ## Gotchas
 
@@ -78,7 +80,7 @@ Three layers connected by the Solana program ID and the TxLINE oracle:
 - **PDA seeds:** Market = `["market", u64-LE(market_id)]`; Bet = `["bet", market, bettor, [outcome_index]]` (one bet per outcome per wallet); Config = `["config"]`.
 - Backend tests live in `backend/src/__tests__/`; contract tests in `contracts/prediction-market/tests/` (mocha/chai via `anchor test`). Contract test imports use default-import form (`import anchorPkg from ...`) because Node 22.18+ native type-stripping loads the file as ESM where anchor's named exports aren't visible.
 - All three tiers agree on port **3001** for the backend API.
-- **Markets are created for World Cup fixtures only.** `isWorldCupFixture()` in `backend/src/types/txline.ts` (league `"World Cup"` or `metadata.competitionId === 72`, the `WORLD_CUP_COMPETITION_ID`) gates market creation in **both** `txline.service.ts` (poller) and `market.service.ts` (`processFixtures`, defense-in-depth — a fixture carrying non-WC competition info is skipped + logged). Don't loosen this: markets become on-chain objects, so a stray fixture (e.g. a Friendlies match) would mint a real Devnet market. Fixtures with no competition info are trusted through.
+- **Markets are created for World Cup fixtures only.** `isWorldCupFixture()` in `backend/src/types/txline.ts` (league `"World Cup"` or `metadata.competitionId === 72`, the `WORLD_CUP_COMPETITION_ID`) gates market creation. The **actual** creation path is the `setInterval` in `index.ts` that reads scheduled fixtures from the DB → `MarketService.processFixtureRows(rows)` (NOT the poller's `fixtures:updated` event). `processFixtureRows` owns the DB-row→input mapping incl. `league` + JSON-parsed `metadata`; **do not** map fixtures without those fields or the filter's "trust fixtures with no competition info" fallback lets non-WC friendlies (e.g. Vietnam-Myanmar) mint real Devnet markets. Guard also lives in `processFixtures` (defense-in-depth, skips + logs). Don't loosen this — markets are on-chain objects.
 
 ## Reference docs
 

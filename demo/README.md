@@ -23,7 +23,7 @@ node assemble.mjs
 ffmpeg -i goalchain-demo.mp4 -c:v copy \
   -af "loudnorm=I=-16:TP=-1.5:LRA=11" -ar 48000 -ac 2 -c:a aac -b:a 192k \
   -movflags +faststart ../goalchain-demo-final.mp4
-#   → ../goalchain-demo-final.mp4  ← THIS is the submission file (2:53, narrated)
+#   → ../goalchain-demo-final.mp4  ← THIS is the submission file (2:56, narrated)
 
 # Caption-only fallback (no voice track): burn narration in as captions —
 # a submittable silent-friendly cut with zero external dependencies:

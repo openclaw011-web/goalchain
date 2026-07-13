@@ -3,12 +3,15 @@
 ## Superteam Earn Requirements
 
 ### 1. Demo Video (Up to 5 Minutes) ✅
-- [x] **PRODUCED: `goalchain-demo-final.mp4` (2:53, repo root)** — 12 scenes, every frame real
-      (live product UI, real Devnet txs on Explorer, live TxLINE connection, fresh 26-test run,
-      deployed-binary payout verification), with **voice narration** (12 clips in `demo/audio/`,
-      loudness-normalized to −16 LUFS, faststart for streaming).
+- [x] **PRODUCED: `goalchain-demo-final.mp4` (2:56, repo root)** — 12 scenes, every frame real,
+      recorded off the **live product now showing the real semi-finals** (France–Spain,
+      England–Argentina): live markets/detail UI, real Devnet txs on Explorer, live TxLINE
+      connection, fresh 26-test run, deployed-binary payout verification. **Voice narration**
+      (12 clips in `demo/audio/`, loudness-normalized to −16 LUFS, faststart for streaming).
       Reproducible pipeline in `demo/` (`record.mjs` → `assemble.mjs`).
       Caption-only fallback (`captions.mjs`) still available if a silent-friendly cut is needed.
+      (Note: the home/landing scene keeps illustrative showcase stats by design — the fresh
+      Devnet deployment has $0 pools / 0 predictors.)
 - [ ] Upload to YouTube (unlisted) — title/description ready in `demo/youtube-metadata.md`
 
 ### 2. Public Repo ✅
@@ -17,15 +20,20 @@
 - [x] All code committed (clean tree on `main`)
 - [x] No secret keys in repo (.env.example only; real TxLINE creds in gitignored backend/.env*)
 
-### 3. Application Access
-- [x] Frontend live on Vercel: **https://goalchain-opal.vercel.app**
+### 3. Application Access ✅ — full stack LIVE end-to-end
+- [x] Frontend live on Vercel: **https://goalchain-opal.vercel.app** — verified in-browser showing the
+      real semi-finals (France–Spain, England–Argentina) from the live backend.
+- [x] Backend live on Render: **https://goalchain-api.onrender.com** (`goalchain-api`,
+      `srv-d9ae9gmcjfls739nd730`, free plan, Blueprint from `render.yaml`). `/health` reports
+      `txline.scoresConnected: true` + `keeper.running: true` (proves the 3 secrets took).
 - [x] Contract deployed to Devnet: `C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5`
-- [~] Backend on Render — service **created** as `goalchain-api`
-      (`https://goalchain-api.onrender.com`, `srv-d9ae9gmcjfls739nd730`, free plan,
-      Blueprint from `render.yaml`; 3 secrets set: `TXLINE_JWT`, `TXLINE_API_TOKEN`,
-      `SOLANA_KEEPER_PRIVATE_KEY` as base64). **First build failed — needs a fix + redeploy.**
-- [ ] Point Vercel `NEXT_PUBLIC_API_URL` at the Render backend once it's live, then redeploy frontend
-      (until then the frontend gracefully serves demo/mock data via `lib/api.ts` fallback)
+- [x] Frontend wired to backend via Vercel **project env vars** `NEXT_PUBLIC_API_URL` /
+      `NEXT_PUBLIC_WS_URL` (vercel.json `build.env` is NOT reliably inlined for `NEXT_PUBLIC_*`).
+- [x] Fixed the reason the site showed mock data even when wired: `useQuery` seeded `initialData`
+      from the mock store + `staleTime:30000` meant it never refetched — `initialDataUpdatedAt: 0`.
+- [~] **Caveat: Render free tier cold-starts ~30s after 15min idle**, but the frontend fetch timeout is
+      5s → a visitor hitting a cold backend briefly sees mock data until it warms. Mitigate before
+      judging with a keep-alive ping (cron hitting `/health` every ~10min) or a paid instance.
 
 ### 4. Brief Technical Documentation ✅
 Copy this into the Superteam submission form:
@@ -113,7 +121,7 @@ vercel deploy --prod
 ## Pre-Submission Final Check
 
 - [x] `npm run build` passes in frontend with 0 errors
-- [x] Backend tests pass: `cd backend && npm test` (95/95 incl. keeper bot + World-Cup market filter)
+- [x] Backend tests pass: `cd backend && npm test` (97/97 incl. keeper bot + World-Cup market filter). CI also runs `npm run build` (tsc) — mirrors the Render build.
 - [x] Contract compiles: `anchor build` (+ IDL generated)
 - [x] Contract test suite passes: `anchor test --skip-build --provider.cluster localnet` (26/26)
 - [x] Config + 6 demo markets live on Devnet (`scripts/bootstrap-devnet-markets.mjs`)
@@ -121,9 +129,10 @@ vercel deploy --prod
 - [x] Program upgrade deployed (claim/refund payout fix + settle_market proof pass-through) — tx `4HxXjqybbuaonvacMv156XMCW2B7DbNMi6KUNmRQd5XqM2AC3STaAM7oqmtDELz7Cnmq48TtDsxyQ7D3z99tBDqs`
 - [x] PDA payout verified on the deployed binary (`scripts/verify-payout-devnet.mjs` — refund_bet moved 0.01 SOL out of escrow)
 - [x] GitHub repo is public: https://github.com/openclaw011-web/goalchain
-- [x] Live site URL responds with 200: **https://goalchain-opal.vercel.app** (all 5 routes verified in production; Render backend build pending — frontend serves demo data until then)
-- [ ] Wallet connect works on deployed site
-- [ ] Render backend build green + `/health` shows `txline.scoresConnected: true` and `keeper.running: true` (proves the 3 secrets took)
-- [ ] TxLINE scores visible in deployed frontend (after `NEXT_PUBLIC_API_URL` points at the Render backend)
-- [x] Demo video produced with voice narration (`goalchain-demo-final.mp4`, 2:53) — pending YouTube upload
+- [x] Live site URL responds with 200: **https://goalchain-opal.vercel.app** — verified in-browser showing the real semi-finals from the live Render backend (not mock)
+- [x] Render backend `/health` shows `txline.scoresConnected: true` and `keeper.running: true` (the 3 secrets took)
+- [x] TxLINE fixtures visible in the deployed frontend (France–Spain, England–Argentina — real World Cup semis)
+- [ ] Wallet connect works on deployed site (manual check with Phantom/Backpack)
+- [ ] Warm the backend before judging so a cold-start visitor doesn't briefly see mock data (keep-alive ping)
+- [x] Demo video produced with voice narration (`goalchain-demo-final.mp4`, 2:56) — pending YouTube upload
 - [ ] Submission form filled out on Superteam Earn

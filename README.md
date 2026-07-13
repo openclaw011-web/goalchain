@@ -34,7 +34,8 @@ GoalChain is a **fully trustless, on-chain prediction market** for the 2026 FIFA
 | Real bet on the live fixture market | [transaction](https://explorer.solana.com/tx/4R1iD7VbHrcbefLbgLpQ8googgzXV1rQTjxgdVrhB7CbLv5gtZfZoinZy58CZz1ywPs1NxiCCF2fVoBY7ok594b6?cluster=devnet) |
 | Real on-chain TxLINE subscription | [transaction](https://explorer.solana.com/tx/2aBG9VWZg7AriJyhDA8zY2JnBqybhzFeJcjVqoEFnyos2s9EaH7UWCoMPKdpeP3WiZTLgvWZc3TibV7UEBLLToZi?cluster=devnet) |
 | PDA payout verified on the deployed binary (`refund_bet`, `scripts/verify-payout-devnet.mjs`) | [transaction](https://explorer.solana.com/tx/4QK3B1dYhnXrW37Mvn1JcSi2p21t3dgvPRQQbZXz6Y56yqQKAQ5wCUh4wZ4pZd6FucdtKmE9H7aXdLx4oK6fJaSM?cluster=devnet) |
-| Test suites | 26/26 on-chain lifecycle tests (incl. settle-via-CPI → claim payouts) · 95/95 backend · frontend builds clean |
+| Test suites | 26/26 on-chain lifecycle tests (incl. settle-via-CPI → claim payouts) · 97/97 backend · frontend builds clean |
+| **Live backend** (real TxLINE feed) | [`goalchain-api.onrender.com/health`](https://goalchain-api.onrender.com/health) — `txline.scoresConnected: true`, auto-created markets for the real World Cup semi-finals |
 
 ---
 
