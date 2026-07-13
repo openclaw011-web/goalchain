@@ -3,11 +3,12 @@
 ## Superteam Earn Requirements
 
 ### 1. Demo Video (Up to 5 Minutes) ✅
-- [ ] Record with Loom/YouTube — follow DEMO_VIDEO_SCRIPT.md
-- [ ] Show live TxLINE data flowing in (SSE stream visible)
-- [ ] Show wallet bet placement (real Solana tx)
-- [ ] Show settlement via TxLINE proof
-- [ ] Show ProofVerifier page
+- [x] **PRODUCED: `goalchain-demo-captioned.mp4` (2:02, repo root)** — 12 scenes, every frame real
+      (live product UI, real Devnet txs on Explorer, live TxLINE connection, fresh 26-test run,
+      deployed-binary payout verification). Narration burned in as captions — submittable as-is.
+      Reproducible pipeline in `demo/` (`record.mjs` → `assemble.mjs` → `captions.mjs`).
+- [ ] Optional upgrade: voice narration (script + voice settings in `demo/narration.md`;
+      drop clips in `demo/audio/` and rerun `node assemble.mjs`)
 - [ ] Upload to YouTube (unlisted) or Loom
 
 ### 2. Public Repo ✅

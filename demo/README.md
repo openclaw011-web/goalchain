@@ -18,6 +18,10 @@ node record.mjs                # or `node record.mjs 04-detail` for one scene
 
 # 3. assemble → goalchain-demo.mp4 (pads each scene to fit its narration)
 node assemble.mjs
+
+# No voice track yet? Burn the narration in as captions instead —
+# produces a submittable video with zero external dependencies:
+node captions.mjs        # → ../goalchain-demo-captioned.mp4
 ```
 
 | File | Purpose |
