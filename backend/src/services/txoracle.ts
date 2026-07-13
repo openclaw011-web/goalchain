@@ -117,7 +117,7 @@ function loadTxoracleIdl(): unknown {
 export async function buildValidateStatProofData(args: ValidateStatArgs): Promise<Buffer> {
   const anchorMod = await import('@coral-xyz/anchor');
   // jest's CJS interop puts exports on .default; plain node ESM has them named.
-  const anchor = (anchorMod as { default?: typeof anchorMod }).default ?? anchorMod;
+  const anchor = (anchorMod as unknown as { default?: typeof anchorMod }).default ?? anchorMod;
   const coder = new anchor.BorshInstructionCoder(
     loadTxoracleIdl() as import('@coral-xyz/anchor').Idl,
   );
