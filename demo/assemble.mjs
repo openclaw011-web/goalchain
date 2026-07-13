@@ -33,10 +33,12 @@ for (const f of scenes) {
   // openh264: Fedora's ffmpeg ships without libx264
   const enc = '-c:v libopenh264 -b:v 6M -maxrate 8M -pix_fmt yuv420p';
   const vf = `scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,fps=30,tpad=stop_mode=clone:stop_duration=${Math.max(0, total - vd).toFixed(2)}`;
+  // Normalize audio to 48kHz stereo: TTS wavs are 24kHz mono, which some
+  // players render silently and which breaks -c copy concat consistency.
   if (audio) {
-    sh(`ffmpeg -y -v error -i "${video}" -i "${audio}" -filter_complex "[0:v]${vf}[v];[1:a]adelay=400|400,apad[a]" -map "[v]" -map "[a]" -t ${total.toFixed(2)} ${enc} -c:a aac -b:a 160k "${out}"`);
+    sh(`ffmpeg -y -v error -i "${video}" -i "${audio}" -filter_complex "[0:v]${vf}[v];[1:a]adelay=400|400,apad,aresample=48000,aformat=channel_layouts=stereo[a]" -map "[v]" -map "[a]" -t ${total.toFixed(2)} ${enc} -c:a aac -ar 48000 -ac 2 -b:a 192k "${out}"`);
   } else {
-    sh(`ffmpeg -y -v error -i "${video}" -f lavfi -i anullsrc=r=48000:cl=stereo -filter_complex "[0:v]${vf}[v]" -map "[v]" -map 1:a -t ${total.toFixed(2)} ${enc} -c:a aac -b:a 160k "${out}"`);
+    sh(`ffmpeg -y -v error -i "${video}" -f lavfi -i anullsrc=r=48000:cl=stereo -filter_complex "[0:v]${vf}[v]" -map "[v]" -map 1:a -t ${total.toFixed(2)} ${enc} -c:a aac -ar 48000 -ac 2 -b:a 192k "${out}"`);
   }
   parts.push(out);
   console.log(`✔ ${name}  video=${vd.toFixed(1)}s  ${audio ? `narration=${(ad - 0.7).toFixed(1)}s` : 'silent'}  → ${total.toFixed(1)}s`);
