@@ -210,6 +210,57 @@ describe('MarketService', () => {
       const markets = service.getAllMarkets();
       expect(markets).toHaveLength(0);
     });
+
+    it('should skip fixtures from other competitions', () => {
+      const now = Date.now();
+      service.processFixtures([
+        {
+          id: 'fixture-friendly',
+          homeTeam: 'Vietnam',
+          awayTeam: 'Myanmar',
+          startTime: new Date(now + 3600_000).toISOString(),
+          status: 'scheduled',
+          league: 'Friendlies',
+          metadata: { competitionId: 430 },
+        },
+      ]);
+
+      const markets = service.getAllMarkets();
+      expect(markets).toHaveLength(0);
+    });
+
+    it('should create markets for fixtures identified as World Cup by league name', () => {
+      const now = Date.now();
+      service.processFixtures([
+        {
+          id: 'fixture-wc-league',
+          homeTeam: 'France',
+          awayTeam: 'Spain',
+          startTime: new Date(now + 3600_000).toISOString(),
+          status: 'scheduled',
+          league: 'World Cup',
+        },
+      ]);
+
+      expect(service.getAllMarkets()).toHaveLength(1);
+    });
+
+    it('should create markets for fixtures identified as World Cup by competition id', () => {
+      const now = Date.now();
+      service.processFixtures([
+        {
+          id: 'fixture-wc-compid',
+          homeTeam: 'England',
+          awayTeam: 'Argentina',
+          startTime: new Date(now + 3600_000).toISOString(),
+          status: 'scheduled',
+          league: 'FIFA World Cup 2026', // display name differs; competitionId decides
+          metadata: { competitionId: 72 },
+        },
+      ]);
+
+      expect(service.getAllMarkets()).toHaveLength(1);
+    });
   });
 
   describe('market lifecycle via processTxlineEvent', () => {

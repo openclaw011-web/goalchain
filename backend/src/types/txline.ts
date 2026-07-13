@@ -203,3 +203,21 @@ export interface WsMessage {
   data: unknown;
   timestamp: string;
 }
+
+// ─── World Cup Identification ────────────────────────────────────────────────
+
+/** TxLINE CompetitionId for the FIFA World Cup. */
+export const WORLD_CUP_COMPETITION_ID = 72;
+
+/**
+ * True when a fixture's competition info identifies it as the World Cup.
+ * Fixtures normalised from TxLINE carry `league` (Competition name) and
+ * `metadata.competitionId`; either one matching qualifies.
+ */
+export function isWorldCupFixture(fixture: {
+  league?: string;
+  metadata?: unknown;
+}): boolean {
+  const competitionId = (fixture.metadata as { competitionId?: number } | undefined)?.competitionId;
+  return fixture.league === 'World Cup' || competitionId === WORLD_CUP_COMPETITION_ID;
+}

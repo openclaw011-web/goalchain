@@ -18,6 +18,7 @@ import { config } from '../config.js';
 import { getLogger } from '../logger.js';
 import type { PredictionMarket, MarketOutcome, MarketStatus } from '../types/txline.js';
 import type { NormalisedMatchEvent } from '../types/txline.js';
+import { isWorldCupFixture } from '../types/txline.js';
 
 const logger = getLogger();
 
@@ -163,6 +164,7 @@ export class MarketService extends EventEmitter {
   processFixtures(fixtures: Array<{
     id: string; homeTeam: string; awayTeam: string;
     startTime: string; status: string;
+    league?: string; metadata?: unknown;
   }>): void {
     const now = Date.now();
     const lookahead = config.marketCreationLookahead;
@@ -170,6 +172,18 @@ export class MarketService extends EventEmitter {
     for (const fixture of fixtures) {
       // Only create markets for scheduled/upcoming fixtures
       if (fixture.status !== 'scheduled' && fixture.status !== 'live') continue;
+
+      // The poller pre-filters to World Cup, but markets become on-chain
+      // objects — never create one for a fixture that identifies as another
+      // competition. Fixtures without competition info are trusted.
+      const competitionId = (fixture.metadata as { competitionId?: number } | undefined)?.competitionId;
+      if ((fixture.league !== undefined || competitionId !== undefined) && !isWorldCupFixture(fixture)) {
+        logger.warn(
+          { fixtureId: fixture.id, league: fixture.league, competitionId },
+          'Skipping non-World-Cup fixture in market creation',
+        );
+        continue;
+      }
 
       // Skip if we already created a market for this fixture
       if (this.createdForFixture.has(fixture.id)) continue;

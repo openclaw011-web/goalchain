@@ -31,6 +31,7 @@ import type {
   TxlineScoreSnapshot,
   NormalisedMatchEvent,
 } from '../types/txline.js';
+import { isWorldCupFixture } from '../types/txline.js';
 
 // ─── Logger ──────────────────────────────────────────────────────────────────
 
@@ -464,9 +465,7 @@ export class TxlineService extends EventEmitter {
 
       // Notify market service so upcoming World Cup fixtures get markets.
       const worldCupUpcoming = fixtures.fixtures.filter(
-        (f) =>
-          f.status === 'scheduled' &&
-          (f.league === 'World Cup' || (f.metadata as { competitionId?: number } | undefined)?.competitionId === 72),
+        (f) => f.status === 'scheduled' && isWorldCupFixture(f),
       );
       if (worldCupUpcoming.length > 0) {
         this.emit('fixtures:updated', worldCupUpcoming);
