@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: radial-gradient(ellipse at 50% 30%, #10243a 0%, #060a12 65%); height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'DejaVu Sans', sans-serif; color: #e6edf3; }
+  .wrap { text-align: center; max-width: 1500px; }
+  h1 { font-size: 92px; letter-spacing: -2px; margin-bottom: 10px; }
+  h1 .ball { color: #7ee787; }
+  .tag { font-size: 34px; color: #8b949e; margin-bottom: 54px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-bottom: 56px; }
+  .card { background: rgba(22,27,34,.85); border: 1px solid #21262d; border-radius: 14px; padding: 26px 20px; opacity: 0; transform: translateY(16px); transition: all .5s ease; }
+  .card.show { opacity: 1; transform: none; }
+  .card .ic { font-size: 40px; margin-bottom: 12px; }
+  .card .h { font-size: 23px; font-weight: 700; margin-bottom: 8px; color: #79c0ff; }
+  .card .d { font-size: 18px; color: #8b949e; line-height: 1.45; }
+  .links { font-size: 30px; line-height: 2.0; }
+  .links b { color: #7ee787; font-family: 'DejaVu Sans Mono', monospace; font-size: 28px; }
+  .fine { margin-top: 40px; font-size: 22px; color: #8b949e; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1><span class="ball">⚽</span> GoalChain</h1>
+    <div class="tag">Settle with proof. Win with confidence.</div>
+    <div class="grid">
+      <div class="card"><div class="ic">📡</div><div class="h">TxLINE Live Feed</div><div class="d">Real SSE scores &amp; odds — real on-chain subscription, live World Cup fixtures</div></div>
+      <div class="card"><div class="ic">🔒</div><div class="h">PDA Escrow</div><div class="d">SOL locked in the market account itself — no custodian, no house wallet</div></div>
+      <div class="card"><div class="ic">🧾</div><div class="h">On-Chain Proof CPI</div><div class="d">settle_market CPIs into TxLINE validate_stat — Merkle proof verified on Solana</div></div>
+      <div class="card"><div class="ic">🤖</div><div class="h">Keeper Bot</div><div class="d">Automatic settlement the moment the result lands — no human in the loop</div></div>
+      <div class="card"><div class="ic">✅</div><div class="h">26 + 92 Tests</div><div class="d">Full lifecycle proven: Create → Bet → Lock → Settle-via-CPI → Claim</div></div>
+      <div class="card"><div class="ic">🌐</div><div class="h">Deployed &amp; Live</div><div class="d">Program on Devnet, verified payouts, live site, CI green</div></div>
+    </div>
+    <div class="links">
+      🌐 <b>goalchain-opal.vercel.app</b><br>
+      💻 <b>github.com/openclaw011-web/goalchain</b><br>
+      ⛓️ <b>C5vNdxLc…gEQE5</b> <span style="color:#8b949e;font-size:24px">(Solana Devnet — verify every claim yourself)</span>
+    </div>
+    <div class="fine">TxODDS × Superteam Earn — Prediction Markets and Settlement</div>
+  </div>
+<script>
+  window.reveal = async () => {
+    const cards = document.querySelectorAll('.card');
+    for (let i = 0; i < cards.length; i++) {
+      await new Promise(r => setTimeout(r, 330));
+      cards[i].classList.add('show');
+    }
+    window.__done = true;
+  };
+</script>
+</body>
+</html>

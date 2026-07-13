@@ -1,0 +1,6 @@
+tx: 2YLXyAidD1Do1M8QanHHk3uC7z8bfR19gyK39ras52xtbxVs56XR88vFXJpHk5FuVUNV4Hi6J1UDbbBtJGWwjVDQ
+market: TXLINE-18237038 | outcomes: France/Draw/Spain
+escrow: 0.01174 -> 0.02174 SOL
+market.totalPool: 20000000 outcomePools: [ '10000000', '10000000', '0' ]
+bet: { outcome: 1, amount: '10000000', claimed: false }
+explorer: https://explorer.solana.com/tx/2YLXyAidD1Do1M8QanHHk3uC7z8bfR19gyK39ras52xtbxVs56XR88vFXJpHk5FuVUNV4Hi6J1UDbbBtJGWwjVDQ?cluster=devnet

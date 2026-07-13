@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0e14; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'DejaVu Sans Mono', monospace; }
+  .panel { width: 1640px; background: #0d1117; border-radius: 12px; border: 1px solid #21262d; box-shadow: 0 24px 80px rgba(0,0,0,.6); overflow: hidden; }
+  .bar { height: 46px; background: #161b22; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid #21262d; color: #8b949e; font-size: 16px; }
+  .bar .file { color: #79c0ff; }
+  pre { padding: 30px 36px; font-size: 20.5px; line-height: 1.58; color: #c9d1d9; }
+  .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .str { color: #a5d6ff; } .com { color: #8b949e; font-style: italic; } .ty { color: #ffa657; } .lit { color: #79c0ff; }
+  .hl { display: block; background: rgba(56,139,253,.13); border-left: 3px solid #58a6ff; margin-left: -36px; padding-left: 33px; }
+  .cap { text-align: center; color: #e6edf3; font-size: 26px; padding: 22px; font-family: 'DejaVu Sans', sans-serif; background: #161b22; border-top: 1px solid #21262d; }
+  .cap b { color: #7ee787; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="bar">contracts/prediction-market/programs/prediction-market/src/<span class="file">lib.rs</span> — settle_market ⭐</div>
+    <pre><span class="com">// SettleMarket — THE CROWN JEWEL
+// Verifies the match outcome through the TxLINE oracle before settling.</span>
+
+<span class="kw">pub fn</span> <span class="fn">settle_market</span>(ctx: <span class="ty">Context</span>&lt;<span class="ty">SettleMarket</span>&gt;, winning_outcome: <span class="ty">u8</span>, proof_data: <span class="ty">Vec</span>&lt;<span class="ty">u8</span>&gt;) -&gt; <span class="ty">Result</span>&lt;()&gt; {
+    <span class="com">// … market must be Locked, past resolve_time, outcome in range …</span>
+
+    <span class="com">// Only the GENUINE TxLINE program may be invoked</span>
+    require!(ctx.accounts.txline_program.key() == <span class="lit">TXLINE_DEVNET</span>,
+             PredictionMarketError::InvalidTxLineProgram);
+
+<span class="hl">    <span class="com">// CPI into TxLINE's validate_stat — Merkle proof verified ON-CHAIN</span></span>
+<span class="hl">    <span class="kw">let mut</span> instruction_data = hash(<span class="str">b"global:validate_stat"</span>).to_bytes()[..<span class="lit">8</span>].to_vec();</span>
+<span class="hl">    instruction_data.extend_from_slice(&amp;proof_data);</span>
+<span class="hl">    <span class="fn">invoke</span>(&amp;cpi_ix, &amp;[…])?;   <span class="com">// proof invalid ⇒ reverts ⇒ market stays Locked</span></span>
+
+    <span class="com">// CPI succeeded — outcome is cryptographically confirmed</span>
+    market.winning_outcome = winning_outcome;
+    market.status = MarketStatus::<span class="ty">Settled</span>;
+}</pre>
+    <div class="cap">No valid proof → <b>no settlement</b>. No admin. No trust.</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: radial-gradient(ellipse at 50% 40%, #10243a 0%, #060a12 65%); height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'DejaVu Sans', sans-serif; color: #e6edf3; overflow: hidden; }
+  .wrap { text-align: center; max-width: 1500px; }
+  .line { font-size: 52px; line-height: 1.6; color: #8b949e; opacity: 0; transform: translateY(14px); transition: all .6s ease; }
+  .line.show { opacity: 1; transform: none; }
+  .line b { color: #e6edf3; }
+  .punch { margin-top: 60px; font-size: 88px; font-weight: 800; letter-spacing: -2px; opacity: 0; transform: scale(.96); transition: all .7s ease; }
+  .punch.show { opacity: 1; transform: none; }
+  .punch .g { color: #7ee787; }
+  .sub { margin-top: 18px; font-size: 34px; color: #79c0ff; opacity: 0; transition: opacity .6s ease; }
+  .sub.show { opacity: 1; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="line" id="l1">Sports prediction platforms ask you to <b>trust them</b> —</div>
+    <div class="line" id="l2">to read the result honestly, to hold your funds, to pay out.</div>
+    <div class="punch" id="p"><span class="g">⚽ GoalChain</span> replaces trust with proof.</div>
+    <div class="sub" id="s">A World Cup prediction market settled by cryptographic proof — on Solana</div>
+  </div>
+<script>
+  window.reveal = async () => {
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    document.getElementById('l1').classList.add('show'); await sleep(1700);
+    document.getElementById('l2').classList.add('show'); await sleep(2100);
+    document.getElementById('p').classList.add('show'); await sleep(1500);
+    document.getElementById('s').classList.add('show');
+    window.__done = true;
+  };
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+market_id 1783878124124 → 96owK3DZYMYeXGB3mxQAQputsZUhvUhwyL2HrQJ35w4o
+1. market created
+2. bet placed: 0.01 SOL into PDA escrow
+3. market cancelled
+4. refund_bet SUCCEEDED — lamports moved out of the data-carrying market PDA
+   escrow:  0.01164952 -> 0.00164952 SOL (-0.01 exactly)
+   bettor:  +0.009995 SOL (refund minus tx fee)
+   tx: https://explorer.solana.com/tx/3FABYhUPyWf4B4GPKoYkxedhy5hpwHYhFUYfWSfgLDxLVSF2JRWS59KebFjAKy1Eifke8GkP9y5rfbjUP1NV4B27?cluster=devnet
+
+✅ PDA payout fix verified on the deployed Devnet binary.

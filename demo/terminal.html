@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0e14; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'DejaVu Sans Mono', monospace; }
+  .term { width: 1600px; height: 880px; background: #0d1117; border-radius: 12px; border: 1px solid #21262d; box-shadow: 0 24px 80px rgba(0,0,0,.6); overflow: hidden; display: flex; flex-direction: column; }
+  .bar { height: 44px; background: #161b22; display: flex; align-items: center; padding: 0 18px; gap: 8px; border-bottom: 1px solid #21262d; }
+  .dot { width: 13px; height: 13px; border-radius: 50%; }
+  .r { background: #ff5f57; } .y { background: #febc2e; } .g { background: #28c840; }
+  .title { color: #8b949e; font-size: 15px; margin-left: 14px; }
+  .body { flex: 1; padding: 26px 30px; font-size: 19px; line-height: 1.62; color: #c9d1d9; white-space: pre-wrap; overflow: hidden; }
+  .prompt { color: #7ee787; font-weight: bold; }
+  .cmd { color: #e6edf3; font-weight: bold; }
+  .ok { color: #56d364; }
+  .accent { color: #79c0ff; }
+  .dim { color: #8b949e; }
+  .cursor { display: inline-block; width: 10px; height: 22px; background: #58a6ff; vertical-align: text-bottom; animation: blink 1s step-start infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+  <div class="term">
+    <div class="bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><div class="title" id="title"></div></div>
+    <div class="body" id="body"><span class="cursor" id="cur"></span></div>
+  </div>
+<script>
+  // window.playScript(title, lines) — lines: [{t:'cmd'|'out', text, cls?, delay?}]
+  window.playScript = async (title, lines) => {
+    document.getElementById('title').textContent = title;
+    const body = document.getElementById('body');
+    const cur = document.getElementById('cur');
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    for (const line of lines) {
+      await sleep(line.delay ?? 120);
+      if (line.t === 'cmd') {
+        const p = document.createElement('span');
+        p.className = 'prompt'; p.textContent = '$ ';
+        body.insertBefore(p, cur);
+        const c = document.createElement('span');
+        c.className = 'cmd';
+        body.insertBefore(c, cur);
+        for (const ch of line.text) { c.textContent += ch; await sleep(18); }
+        body.insertBefore(document.createTextNode('\n'), cur);
+        await sleep(300);
+      } else {
+        const s = document.createElement('span');
+        if (line.cls) s.className = line.cls;
+        s.textContent = line.text + '\n';
+        body.insertBefore(s, cur);
+      }
+      body.scrollTop = body.scrollHeight;
+    }
+    window.__done = true;
+  };
+</script>
+</body>
+</html>

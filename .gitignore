@@ -12,3 +12,4 @@ test-ledger/
 data/
 .env.txline
 .env.*.local
+*.mp4

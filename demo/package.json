@@ -1,0 +1,15 @@
+{
+  "name": "demo",
+  "version": "1.0.0",
+  "description": "Fully reproducible pipeline for the GoalChain submission video. Every frame is the real product: the local prod build backed by live TxLINE data, real Devnet transactions on Solana Explorer, and terminal replays of genuine command output (`out-*.txt` — captured, not fabricated).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}

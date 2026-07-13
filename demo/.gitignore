@@ -1,0 +1,7 @@
+node_modules/
+scenes/
+segments/
+audio/
+*.mp4
+*.png
+package-lock.json

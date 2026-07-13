@@ -1,0 +1,45 @@
+(node:7047) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/camel/Documents/worldcup-predict/contracts/prediction-market/tests/prediction-market.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/camel/Documents/worldcup-predict/contracts/prediction-market/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+  prediction-market
+    initialize_config
+      ✔ creates the MarketConfig PDA with correct admin and fee (347ms)
+      ✔ rejects duplicate initialization (config already exists)
+      ✔ rejects fee > 1000 bps
+    create_market
+      ✔ creates a market with correct initial state (375ms)
+      ✔ rejects creation by non-admin (444ms)
+      ✔ rejects invalid outcome count (1 or 4) (43ms)
+      ✔ rejects lock_time in the past
+      ✔ rejects resolve_time <= lock_time
+    place_bet
+      ✔ places a bet and updates market pools (407ms)
+      ✔ rejects bet on locked market (392ms)
+      ✔ rejects bet on invalid outcome index (923ms)
+    lock_market
+      ✔ transitions market from Open to Locked (410ms)
+      ✔ rejects locking an already-locked market
+      ✔ rejects lock by non-admin (410ms)
+      ✔ rejects placing a bet on a locked market (474ms)
+    settle_market
+      ✔ rejects settlement without a valid TxLINE proof — market stays Locked
+      ✔ rejects settlement with empty proof_data
+      ✔ rejects settle on unsettlable market (still Open) (422ms)
+      ✔ rejects settle with out-of-range winning_outcome (840ms)
+    claim_winnings
+      ✔ builds pools from multiple bettors and rejects claims before settlement (3237ms)
+    cancel_market / refund_bet
+      ✔ cancels an Open market (411ms)
+      ✔ refunds a bet on a cancelled market (408ms)
+      ✔ rejects double refund
+      ✔ rejects cancel of a settled market
+      ✔ rejects cancel by non-admin (796ms)
+    full lifecycle
+      ✔ Create → Place bets → Lock → Settle (TxLINE CPI) → Claim (multi-user) (13019ms)
+
+
+  26 passing (30s)
+
