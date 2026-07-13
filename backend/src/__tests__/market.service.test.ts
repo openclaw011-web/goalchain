@@ -263,6 +263,58 @@ describe('MarketService', () => {
     });
   });
 
+  describe('processFixtureRows (DB row mapping)', () => {
+    // Rows shaped exactly like db.getFixtures() returns: snake_case columns,
+    // metadata as a JSON string. This is the path the fixture-scan interval
+    // uses — it previously dropped league/metadata and created markets for
+    // non-World-Cup friendlies.
+    it('creates a market for a World Cup row but not a Friendlies row', () => {
+      const soon = new Date(Date.now() + 3600_000).toISOString();
+      service.processFixtureRows([
+        {
+          id: 'row-wc',
+          home_team: 'France',
+          away_team: 'Spain',
+          start_time: soon,
+          status: 'scheduled',
+          league: 'World Cup',
+          metadata: JSON.stringify({ competitionId: 72 }),
+        },
+        {
+          id: 'row-friendly',
+          home_team: 'Vietnam',
+          away_team: 'Myanmar',
+          start_time: soon,
+          status: 'scheduled',
+          league: 'Friendlies',
+          metadata: JSON.stringify({ competitionId: 430 }),
+        },
+      ]);
+
+      const markets = service.getAllMarkets();
+      expect(markets).toHaveLength(1);
+      expect(markets[0].homeTeam).toBe('France');
+    });
+
+    it('handles a null metadata column without throwing', () => {
+      const soon = new Date(Date.now() + 3600_000).toISOString();
+      expect(() =>
+        service.processFixtureRows([
+          {
+            id: 'row-null-meta',
+            home_team: 'France',
+            away_team: 'Spain',
+            start_time: soon,
+            status: 'scheduled',
+            league: 'World Cup',
+            metadata: null,
+          },
+        ]),
+      ).not.toThrow();
+      expect(service.getAllMarkets()).toHaveLength(1);
+    });
+  });
+
   describe('market lifecycle via processTxlineEvent', () => {
     beforeEach(() => {
       // Upsert the fixture into the mock DB (lockMarket looks up fixture)

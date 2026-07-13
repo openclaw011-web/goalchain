@@ -214,19 +214,16 @@ async function main(): Promise<void> {
   // After each poll, the market service processes new fixtures.
   // We'll use a periodic check instead.
 
-  // Periodically scan fixtures and create markets
+  // Periodically scan scheduled fixtures and create markets. processFixtureRows
+  // owns the row→input mapping (incl. league/metadata) so the World-Cup filter
+  // in processFixtures sees the competition info — otherwise every in-window
+  // fixture, including non-WC friendlies, would get a market.
   const marketCheckInterval = setInterval(() => {
-    const fixtures = db.getFixtures('scheduled') as Array<{
-      id: string; home_team: string; away_team: string; start_time: string; status: string;
-    }>;
-    marketService.processFixtures(
-      fixtures.map((f) => ({
-        id: f.id,
-        homeTeam: f.home_team,
-        awayTeam: f.away_team,
-        startTime: f.start_time,
-        status: f.status,
-      })),
+    marketService.processFixtureRows(
+      db.getFixtures('scheduled') as Array<{
+        id: string; home_team: string; away_team: string; start_time: string; status: string;
+        league: string; metadata: string | null;
+      }>,
     );
   }, config.fixturePollInterval);
 

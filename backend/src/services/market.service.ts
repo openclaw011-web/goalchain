@@ -158,6 +158,29 @@ export class MarketService extends EventEmitter {
   // ─── Event-driven lifecycle ───────────────────────────────────────────────
 
   /**
+   * Create markets from raw `fixtures` DB rows (snake_case columns, `metadata`
+   * stored as a JSON string). Owns the row→input mapping so callers can't drop
+   * the `league`/`metadata` fields that the World-Cup filter depends on.
+   */
+  processFixtureRows(rows: Array<{
+    id: string; home_team: string; away_team: string;
+    start_time: string; status: string;
+    league?: string; metadata?: string | null;
+  }>): void {
+    this.processFixtures(
+      rows.map((r) => ({
+        id: r.id,
+        homeTeam: r.home_team,
+        awayTeam: r.away_team,
+        startTime: r.start_time,
+        status: r.status,
+        league: r.league,
+        metadata: r.metadata ? JSON.parse(r.metadata) : undefined,
+      })),
+    );
+  }
+
+  /**
    * Called when a fixture poll returns new fixtures.
    * Creates markets for upcoming fixtures that don't have one yet.
    */
