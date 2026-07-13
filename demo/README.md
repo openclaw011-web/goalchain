@@ -19,10 +19,19 @@ node record.mjs                # or `node record.mjs 04-detail` for one scene
 # 3. assemble → goalchain-demo.mp4 (pads each scene to fit its narration)
 node assemble.mjs
 
-# No voice track yet? Burn the narration in as captions instead —
-# produces a submittable video with zero external dependencies:
+# 4. loudness-normalize + faststart → the upload master:
+ffmpeg -i goalchain-demo.mp4 -c:v copy \
+  -af "loudnorm=I=-16:TP=-1.5:LRA=11" -ar 48000 -ac 2 -c:a aac -b:a 192k \
+  -movflags +faststart ../goalchain-demo-final.mp4
+#   → ../goalchain-demo-final.mp4  ← THIS is the submission file (2:53, narrated)
+
+# Caption-only fallback (no voice track): burn narration in as captions —
+# a submittable silent-friendly cut with zero external dependencies:
 node captions.mjs        # → ../goalchain-demo-captioned.mp4
 ```
+
+> **The upload file is `goalchain-demo-final.mp4` in the repo root** — 12 real scenes with
+> voice narration, normalized to −16 LUFS. YouTube metadata is in `youtube-metadata.md`.
 
 | File | Purpose |
 |---|---|

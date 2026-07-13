@@ -49,6 +49,7 @@ node scripts/sync-live-markets.mjs         # create on-chain markets for backend
 - `./deploy-local.sh` — builds and starts backend + frontend locally
 - `./deploy-prod.sh` — Vercel (frontend) / Render or Railway (backend) deploy helper
 - CI (`.github/workflows/ci.yml`): backend jest tests, frontend build, contract `cargo check`; deploys on push to `main`.
+- **Backend host: Render** (`render.yaml` Blueprint, pinned `plan: free` — Blueprint defaults to the paid Starter otherwise and blocks card-less accounts). Service `goalchain-api` → `https://goalchain-api.onrender.com`. The 3 `sync: false` secrets (`TXLINE_JWT`, `TXLINE_API_TOKEN`, `SOLANA_KEEPER_PRIVATE_KEY`) are entered in the dashboard; the keeper key is **base64-encoded secret-key bytes** (`solana.service.ts` does `Buffer.from(key, 'base64')`, not base58). Railway was tried first but its free trial has expired (needs a paid plan).
 
 ## Architecture
 
@@ -77,6 +78,7 @@ Three layers connected by the Solana program ID and the TxLINE oracle:
 - **PDA seeds:** Market = `["market", u64-LE(market_id)]`; Bet = `["bet", market, bettor, [outcome_index]]` (one bet per outcome per wallet); Config = `["config"]`.
 - Backend tests live in `backend/src/__tests__/`; contract tests in `contracts/prediction-market/tests/` (mocha/chai via `anchor test`). Contract test imports use default-import form (`import anchorPkg from ...`) because Node 22.18+ native type-stripping loads the file as ESM where anchor's named exports aren't visible.
 - All three tiers agree on port **3001** for the backend API.
+- **Markets are created for World Cup fixtures only.** `isWorldCupFixture()` in `backend/src/types/txline.ts` (league `"World Cup"` or `metadata.competitionId === 72`, the `WORLD_CUP_COMPETITION_ID`) gates market creation in **both** `txline.service.ts` (poller) and `market.service.ts` (`processFixtures`, defense-in-depth — a fixture carrying non-WC competition info is skipped + logged). Don't loosen this: markets become on-chain objects, so a stray fixture (e.g. a Friendlies match) would mint a real Devnet market. Fixtures with no competition info are trusted through.
 
 ## Reference docs
 

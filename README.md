@@ -34,7 +34,7 @@ GoalChain is a **fully trustless, on-chain prediction market** for the 2026 FIFA
 | Real bet on the live fixture market | [transaction](https://explorer.solana.com/tx/4R1iD7VbHrcbefLbgLpQ8googgzXV1rQTjxgdVrhB7CbLv5gtZfZoinZy58CZz1ywPs1NxiCCF2fVoBY7ok594b6?cluster=devnet) |
 | Real on-chain TxLINE subscription | [transaction](https://explorer.solana.com/tx/2aBG9VWZg7AriJyhDA8zY2JnBqybhzFeJcjVqoEFnyos2s9EaH7UWCoMPKdpeP3WiZTLgvWZc3TibV7UEBLLToZi?cluster=devnet) |
 | PDA payout verified on the deployed binary (`refund_bet`, `scripts/verify-payout-devnet.mjs`) | [transaction](https://explorer.solana.com/tx/4QK3B1dYhnXrW37Mvn1JcSi2p21t3dgvPRQQbZXz6Y56yqQKAQ5wCUh4wZ4pZd6FucdtKmE9H7aXdLx4oK6fJaSM?cluster=devnet) |
-| Test suites | 26/26 on-chain lifecycle tests (incl. settle-via-CPI → claim payouts) · 88/88 backend · frontend builds clean |
+| Test suites | 26/26 on-chain lifecycle tests (incl. settle-via-CPI → claim payouts) · 95/95 backend · frontend builds clean |
 
 ---
 
@@ -46,7 +46,7 @@ GoalChain is a **fully trustless, on-chain prediction market** for the 2026 FIFA
 ├──────────┬──────────────┬───────────────────────────┤
 │ Frontend │   Backend    │    Solana Program          │
 │ Next.js  │  Node/TS     │    (Anchor 0.31)           │
-│ Vercel   │  Railway     │    Devnet                  │
+│ Vercel   │  Render      │    Devnet                  │
 └──────────┴──┬───────────┴────────────┬──────────────┘
               │                        │
               ▼                        ▼
@@ -76,7 +76,7 @@ We use TxLINE in **three complementary ways**:
 ### 1. Real-Time SSE Feed (Off-Chain)
 ```typescript
 // backend/src/services/txline.service.ts
-const stream = new EventSource(`${TXLINE_API}/api/scores/soccer/stream`, {
+const stream = new EventSource(`${TXLINE_API}/api/scores/stream`, {
   headers: { Authorization: `Bearer ${jwt}`, 'X-Api-Token': apiToken }
 });
 stream.onmessage = (event) => processMatchEvent(JSON.parse(event.data));
@@ -88,6 +88,9 @@ stream.onmessage = (event) => processMatchEvent(JSON.parse(event.data));
 const odds = await fetchOddsSnapshot(matchId);
 await createMarket({ matchId, homeOdds: odds.home, awayOdds: odds.away, drawOdds: odds.draw });
 ```
+Markets are auto-created **only for World Cup fixtures** (TxLINE `CompetitionId 72`) —
+the fixture poller and `MarketService` both gate on `isWorldCupFixture()`, so unrelated
+matches on the wider TxLINE feed never spawn a market.
 
 ### 3. On-Chain Proof Verification (The Crown Jewel)
 ```rust
