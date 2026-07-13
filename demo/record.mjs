@@ -94,9 +94,12 @@ await record('02-home', async (page) => {
 // ── Scene 3: markets page (real TxLINE fixtures) ────────────────────────────
 await record('03-markets', async (page) => {
   await page.goto(`${APP}/markets`, { waitUntil: 'networkidle' });
-  await sleep(3500);
-  await smoothScroll(page, 500, 2200);
-  await sleep(2500);
+  await sleep(4500);
+  // Only the two live semi-final markets — they sit above the fold, so keep a
+  // small settle-scroll that holds them in frame instead of scrolling down
+  // into the empty space below the cards.
+  await smoothScroll(page, 120, 1500);
+  await sleep(3200);
 });
 
 // ── Scene 4: France–Spain market detail (live fixture, on-chain market) ─────

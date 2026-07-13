@@ -28,7 +28,11 @@ for (const f of scenes) {
   const out = join(seg, `${name}.mp4`);
   const vd = dur(video);
   const ad = audio ? dur(audio) + 0.7 : 0;
-  const total = Math.max(vd, ad);
+  // When narration is longer, pad the video (tpad) to fit it. When the video
+  // runs past the narration, cap the quiet tail at ~2.5s so a long scene
+  // (e.g. the Explorer scroll) doesn't leave many seconds of dead air.
+  const TAIL_CAP = 2.5;
+  const total = vd <= ad ? ad : Math.min(vd, ad + TAIL_CAP);
 
   // openh264: Fedora's ffmpeg ships without libx264
   const enc = '-c:v libopenh264 -b:v 6M -maxrate 8M -pix_fmt yuv420p';
