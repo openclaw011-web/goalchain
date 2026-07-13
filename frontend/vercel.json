@@ -4,7 +4,9 @@
   "build": {
     "env": {
       "NEXT_PUBLIC_SOLANA_RPC": "https://api.devnet.solana.com",
-      "NEXT_PUBLIC_PREDICTION_PROGRAM_ID": "C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5"
+      "NEXT_PUBLIC_PREDICTION_PROGRAM_ID": "C5vNdxLcaMriywhQJzv3Dv8PKDfkfnKWHvqCVnqgEQE5",
+      "NEXT_PUBLIC_API_URL": "https://goalchain-api.onrender.com/api",
+      "NEXT_PUBLIC_WS_URL": "wss://goalchain-api.onrender.com/ws"
     }
   }
 }
